@@ -17,6 +17,24 @@ Unfortunately, saves from before 2.0 will not be compatible moving forward.
 
 2.0.1 will be the last "official" release of Pokémon Heart and Soul, after which any bug fixes, content updates, or any propogated updates from **`pokeemerald`** or **`pokeemerald-expansion`** will only be available via community forks of the project.
 
+# About `pokemonHnS-expansion-plus-mikeagan` Changes
+
+This repository is a personal fork of **`pokemonHnS-expansion-plus`** that adds my 
+own personal changes/additions to the plus fork.
+
+ITEM PRICE CHANGES (EVO STONES MATCH HG&SS).  
+ADD ITEMS TO MARTS (after 8 BADGES).  
+ADD ITEMS TO (GOLDENROD & VITAMIN GURU) MARTS.  
+POKEMON CAN MAX ALL EVs.  
+ELM GIVES 5 MASTER BALLS (instead of 1).  
+ADD MORE ODD EGGS  (MANTYKE, BONSLY, HAPPINY, MIME_JR, CHIKORITA, CYNDAQUIL, TOTODILE, EEVEE).  
+ADD PASSWORDS FOR NEW ODD EGGS WITH INFO ADDED TO BOOK SHELVES.  
+YOU CAN GET ALL THE ODD EGGS YOU WANT (MUST GET A DIFFERENT ONE EACH TIME).  
+ADD INFINITE RARE CANDY OPTION OUTSIDE OF NUZLOCK.  
+FIX EEVEE POKEDEX (ADD SUN & MOON STONE FOR ESPEON & UMBREON).  
+	Now you can see a method to get all of them. The original HNS methods still work, but don't show.  
+CHANGED VERSION ON TITLE SCREEN -> v2.0.6.+.M
+
 # About this fork: `pokehns-expansion-plus`
 
 This repository is a personal fork of **`pokemonHnS-expansion`** that back-ports a
