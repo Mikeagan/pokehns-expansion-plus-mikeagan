@@ -445,7 +445,7 @@ NewBarkTown_Lab_EventScript_ElmMasterBall::
 	lock
 	faceplayer
 	msgbox NewBarkTown_Lab_Text_ElmGiveMasterBall1, MSGBOX_DEFAULT
-	giveitem ITEM_MASTER_BALL
+	giveitem ITEM_MASTER_BALL, 5  //give 5 instead of 1
 	msgbox NewBarkTown_Lab_Text_ElmGiveMasterBall2, MSGBOX_DEFAULT
 	closemessage
 	delay 20
