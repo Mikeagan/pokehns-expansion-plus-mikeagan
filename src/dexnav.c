@@ -1042,7 +1042,7 @@ static bool8 InitDexNavSearch(u32 species, u32 environment)
     sDexNavSearchDataPtr->isHiddenMon = (environment == ENCOUNTER_TYPE_HIDDEN) ? TRUE : FALSE;
     sDexNavSearchDataPtr->monLevel = DexNavTryGenerateMonLevel(species, environment);
 
-    if (GetFlashLevel() > 0)
+    if (GetFlashLevel() > 1) //FLASH USED IN DARK OR FULL BRIGHT
     {
         DexNavSearchBail(EventScript_TooDark);
         return TRUE;
@@ -1450,7 +1450,7 @@ static u8 DexNavTryGenerateMonLevel(u16 species, enum EncounterType environment)
         return MON_LEVEL_NONEXISTENT;   //species not found in the area
 
     if (Random() % 100 < 4)
-        levelBonus += 10; //4% chance of having a +10 level
+        levelBonus += 2; //4% chance of having a +10 level -> +2
 
     if (levelBase + levelBonus > MAX_LEVEL)
         return MAX_LEVEL;

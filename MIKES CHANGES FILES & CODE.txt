@@ -7,7 +7,7 @@ C:\Users\micha\OneDrive\Desktop\gba-decomps\pokehns-expansion-mikeagan\graphics\
 //ITEM PRICE CHANGES (EVO STONES MATCH HG&SS)
 //--------------------------------------------------------------
 C:\Users\micha\OneDrive\Desktop\gba-decomps\pokehns-expansion-mikeagan\src\data\items.h
-	ITEM_MASTER_BALL 		0->3000 	(CUSTOM COST OF 100 ULTRA BALLS)
+	ITEM_MASTER_BALL 		0->1000000
 	ITEM_FIRE_STONE			10000->3000
 	ITEM_WATER_STONE		10000->3000
 	ITEM_THUNDER_STONE		10000->3000
@@ -593,3 +593,63 @@ C:\Users\micha\OneDrive\Desktop\gba-decomps\pokehns-expansion-mikeagan\src\data\
                                 {EVO_LEVEL, 0, SPECIES_UMBREON, CONDITIONS({IF_MIN_FRIENDSHIP, FRIENDSHIP_EVO_THRESHOLD}, {IF_TIME, TIME_NIGHT})}
                             #endif
                             ),
+							
+//--------------------------------------------------------------
+//INCREASE FLASH RADIUS
+//--------------------------------------------------------------
+C:\Users\micha\OneDrive\Desktop\gba-decomps\pokehns-expansion-plus-mikeagan\src\field_screen_effect.c
+static const u16 sFlashLevelToRadius[] = { 200, 80, 64, 56, 48, 40, 32, 24, 0 };  //72->80
+
+//--------------------------------------------------------------
+//DEXNAV WORKS WITH FLASH (DARK CAVES)
+//--------------------------------------------------------------
+C:\Users\micha\OneDrive\Desktop\gba-decomps\pokehns-expansion-plus-mikeagan\src\dexnav.c
+    if (GetFlashLevel() > 1) //FLASH USED IN DARK OR FULL BRIGHT
+    {
+        DexNavSearchBail(EventScript_TooDark);
+        return TRUE;
+    }
+
+//--------------------------------------------------------------
+//DEXNAV BONUS STRONGER POKEMON ONLY +2
+//--------------------------------------------------------------
+C:\Users\micha\OneDrive\Desktop\gba-decomps\pokehns-expansion-plus-mikeagan\src\dexnav.c
+static u8 DexNavTryGenerateMonLevel(u16 species, enum EncounterType environment)
+{
+    u8 levelBase = GetEncounterLevelFromMapData(species, environment);
+    u8 levelBonus = gSaveBlock3Ptr->dexNavChain / 5;
+
+    if (levelBase == MON_LEVEL_NONEXISTENT)
+        return MON_LEVEL_NONEXISTENT;   //species not found in the area
+
+    if (Random() % 100 < 4)
+        levelBonus += 2; //4% chance of having a +10 level -> +2
+
+    if (levelBase + levelBonus > MAX_LEVEL)
+        return MAX_LEVEL;
+    else
+        return levelBase + levelBonus;
+}
+
+//--------------------------------------------------------------
+//EDIT BUENA PASSWORD PRIZES
+//--------------------------------------------------------------
+C:\Users\micha\OneDrive\Desktop\gba-decomps\pokehns-expansion-plus-mikeagan\src\pokenav_radio.c
+static const struct {
+    u16 item;
+    u8 weight;
+} sBuenaRewardTable[] =
+{
+    //{ ITEM_GREAT_BALL,    25 },// not using
+    //{ ITEM_ULTRA_BALL,    15 },
+    { ITEM_FULL_RESTORE,  10 },
+    { ITEM_PP_MAX,        10 },//PP_UP->PP_MAX
+    { ITEM_HP_UP,         10 },//5->10
+    { ITEM_PROTEIN,       10 },//5->10
+    { ITEM_IRON,          10 },//5->10
+    { ITEM_CALCIUM,       10 },//5->10
+    { ITEM_CARBOS,        10 },//5->10
+    { ITEM_ZINC,          10 },//NUGGET->ZINC 5->10
+    { ITEM_RARE_CANDY,    10 },//9->10
+    { ITEM_MASTER_BALL,   10 },//1->10
+};

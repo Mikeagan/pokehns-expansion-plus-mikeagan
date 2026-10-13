@@ -69,7 +69,7 @@ static const u8 sText_PlayerRegroupHome[] = _("{PLAYER} scurried back home, to r
 #define tState       data[0]
 
 // Smaller flash level -> larger flash radius
-static const u16 sFlashLevelToRadius[] = { 200, 72, 64, 56, 48, 40, 32, 24, 0 };
+static const u16 sFlashLevelToRadius[] = { 200, 80, 64, 56, 48, 40, 32, 24, 0 };//72->80
 const s32 gMaxFlashLevel = ARRAY_COUNT(sFlashLevelToRadius) - 1;
 
 static const struct ScanlineEffectParams sFlashEffectParams =

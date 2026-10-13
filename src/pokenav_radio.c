@@ -1424,18 +1424,18 @@ static const struct {
     u8 weight;
 } sBuenaRewardTable[] =
 {
-    { ITEM_GREAT_BALL,    25 },
-    { ITEM_ULTRA_BALL,    15 },
+    //{ ITEM_GREAT_BALL,    25 },
+    //{ ITEM_ULTRA_BALL,    15 },
     { ITEM_FULL_RESTORE,  10 },
-    { ITEM_PP_UP,         10 },
-    { ITEM_HP_UP,          5 },
-    { ITEM_PROTEIN,        5 },
-    { ITEM_IRON,           5 },
-    { ITEM_CALCIUM,        5 },
-    { ITEM_CARBOS,         5 },
-    { ITEM_NUGGET,         5 },
-    { ITEM_RARE_CANDY,     9 },
-    { ITEM_MASTER_BALL,    1 },
+    { ITEM_PP_MAX,        10 },//PP_UP->PP_MAX
+    { ITEM_HP_UP,         10 },//5->10
+    { ITEM_PROTEIN,       10 },//5->10
+    { ITEM_IRON,          10 },//5->10
+    { ITEM_CALCIUM,       10 },//5->10
+    { ITEM_CARBOS,        10 },//5->10
+    { ITEM_ZINC,          10 },//NUGGET->ZINC 5->10
+    { ITEM_RARE_CANDY,    10 },//9->10
+    { ITEM_MASTER_BALL,   10 },//1->10
 };
 
 void Special_BuenaRollReward(void)
