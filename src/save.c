@@ -110,7 +110,34 @@ STATIC_ASSERT(offsetof(struct SaveBlock3, challengeSettings) == 16, SaveBlock3Ch
 // old saves would read a field that has moved and the migration would clear the
 // wrong bytes.
 STATIC_ASSERT(offsetof(struct SaveBlock3, candyJarExp) == 52, SaveBlock3CandyJarOffset);
+// Same rule for the sound/field options byte (SAVE_VERSION 8): the migration
+// that zeroes it is only correct while it stays at the end.
+STATIC_ASSERT(offsetof(struct SaveBlock3, soundAndFieldOptions) == 56, SaveBlock3SoundAndFieldOptionsOffset);
+// And for the quest book (SAVE_VERSION 12).
+STATIC_ASSERT(offsetof(struct SaveBlock3, questLog) == 60, SaveBlock3QuestLogOffset);
+// seenHigh (SAVE_VERSION 13) was appended to it: the first 24 bytes keep
+// their place. 30 bytes, rounded up to a word by -mabi=apcs-gnu.
+STATIC_ASSERT(offsetof(struct QuestLogSaveData, seenHigh) == 24, QuestLogSeenHighOffset);
+STATIC_ASSERT(sizeof(struct QuestLogSaveData) == 32, QuestLogSaveDataSize);
+// And for the strip menu's icon order (SAVE_VERSION 14).
+STATIC_ASSERT(offsetof(struct SaveBlock3, stripMenuOrder) == 92, SaveBlock3StripMenuOrderOffset);
+// (sizeof(struct SoundAndFieldOptions) is 4, not 1: -mabi=apcs-gnu rounds every
+// struct up to a word. Harmless, but it is why this is not asserted.) Appending
+// must not push SaveBlock3 out of sector 0's 116-byte tail.
+STATIC_ASSERT(sizeof(struct SaveBlock3) <= SAVE_BLOCK_3_CHUNK_SIZE, SaveBlock3FitsFirstChunk);
 STATIC_ASSERT(sizeof(struct SaveBlock2) <= SECTOR_DATA_SIZE, SaveBlock2FreeSpace);
+// The TcloneR's per-Trainer flags live in what was Emerald's dex flag filler
+// inside struct Pokedex. Carving them out must not move anything after it: the
+// struct keeps its 0x78 bytes and the flags their offset, which the SAVE_VERSION
+// 9 migration zeroes.
+#if FREE_EXTRA_SEEN_FLAGS_SAVEBLOCK2 == FALSE
+STATIC_ASSERT(sizeof(struct Pokedex) == 0x78, PokedexLayoutPinned);
+#endif
+STATIC_ASSERT(offsetof(struct SaveBlock2, pokedex) == 0x18, SaveBlock2PokedexOffset);
+STATIC_ASSERT(offsetof(struct Pokedex, tclonerTrainerFlags) == 0x10, PokedexTClonerFlagsOffset);
+// Growing the flags takes bytes that old saves never cleared: each growth needs
+// its own migration step (82 -> 83 is SAVE_VERSION 10, for Red's Path).
+STATIC_ASSERT(sizeof(((struct Pokedex *)0)->tclonerTrainerFlags) == 83, PokedexTClonerFlagsSize);
 STATIC_ASSERT(sizeof(struct SaveBlock1) <= SECTOR_DATA_SIZE * (SECTOR_ID_SAVEBLOCK1_END - SECTOR_ID_SAVEBLOCK1_START + 1), SaveBlock1FreeSpace);
 STATIC_ASSERT(sizeof(struct PokemonStorage) <= SECTOR_DATA_SIZE * (SECTOR_ID_PKMN_STORAGE_END - SECTOR_ID_PKMN_STORAGE_START + 1), PokemonStorageFreeSpace);
 
@@ -1021,12 +1048,95 @@ u8 LoadGameSave(u8 saveType)
         // merged into ENHANCED DEXNAV, so a save that had that option on would
         // wake up able to catch Trainers' Pokemon. Start every existing save
         // with it off; it is one toggle away in the PC's challenge menu.
-        gSaveBlock3Ptr->challengeSettings.trainerCatch = FALSE;
+        gSaveBlock3Ptr->challengeSettings.unusedTrainerCatchBit = FALSE;
         // FLAG_FORCE_SHINY is the old FLAG_UNUSED_3. Upstream's history is a
         // single squashed commit, so there is no proving an older HnS never
         // wrote it; if it did, every wild Pokemon would come out shiny.
         FlagClear(FLAG_FORCE_SHINY);
         gSaveBlock1Ptr->saveVersion = 7;
+    }
+    if (gSaveBlock1Ptr->saveVersion < 8)
+    {
+        // soundAndFieldOptions was appended to SaveBlock3, so in a save written
+        // before it existed that byte holds whatever was in the sector buffer.
+        // Zero is every option's default.
+        memset(&gSaveBlock3Ptr->soundAndFieldOptions, 0, sizeof(gSaveBlock3Ptr->soundAndFieldOptions));
+        // FLAG_FAST_HMS mirrors fastHms, which is 0 now. The bit has never had
+        // another meaning, but clearing it keeps the two from disagreeing.
+        FlagClear(FLAG_FAST_HMS);
+        gSaveBlock1Ptr->saveVersion = 8;
+    }
+    if (gSaveBlock1Ptr->saveVersion < 9)
+    {
+        // TRAINER CATCH was replaced by the TcloneR key item. Its bit is
+        // ignored now; clearing it is what makes it free for another option.
+        // Whoever had it on gets the item from the scientist like everyone
+        // else: the clone count starts with the item.
+        gSaveBlock3Ptr->challengeSettings.unusedTrainerCatchBit = FALSE;
+        // The per-Trainer flags took over Emerald's old dex flag filler, which
+        // no build wrote but which is not provably zero in every save.
+        memset(gSaveBlock2Ptr->pokedex.tclonerTrainerFlags, 0, sizeof(gSaveBlock2Ptr->pokedex.tclonerTrainerFlags));
+        VarSet(VAR_TCLONER_COUNT, 0);
+        VarSet(VAR_TCLONER_REWARDS, 0);
+        VarSet(VAR_TCLONER_STAGE, 0);
+        gSaveBlock1Ptr->saveVersion = 9;
+    }
+    if (gSaveBlock1Ptr->saveVersion < 10)
+    {
+        // Red's Path added Trainers 653-660, and the TcloneR flags grew from
+        // 82 to 83 bytes to cover them. The new byte is more of the old dex
+        // flag filler: the version 9 step only cleared the first 82, so this
+        // one is not provably zero either. The first 82 are left alone, so
+        // the Trainers already cloned stay counted.
+        gSaveBlock2Ptr->pokedex.tclonerTrainerFlags[82] = 0;
+#if IS_HNS
+        // Red's Path's in-battle flag took FLAG_UNUSED_EXTENDED_86, which is
+        // not provably clear in every save. Left set, it would switch the
+        // randomizer and the challenges off outside the battle.
+        FlagClear(FLAG_REDS_PATH_BATTLE);
+#endif
+        gSaveBlock1Ptr->saveVersion = 10;
+    }
+    if (gSaveBlock1Ptr->saveVersion < 11)
+    {
+#if IS_HNS
+        // Red's Path's introduction and prize flags took
+        // FLAG_UNUSED_EXTENDED_87..95, as unprovably clear as 86 was. A stray
+        // prize flag would swallow a prize that was never handed out.
+        u32 flag;
+
+        for (flag = FLAG_REDS_PATH_INTRO_SEEN; flag <= FLAG_REDS_PATH_PRIZE_GIOVANNI; flag++)
+            FlagClear(flag);
+#endif
+        gSaveBlock1Ptr->saveVersion = 11;
+    }
+    if (gSaveBlock1Ptr->saveVersion < 12)
+    {
+        // The quest book's state was appended to SaveBlock3, so in a save
+        // written before it existed those bytes hold whatever was in the
+        // sector buffer: random favourites, own quests in random states.
+        // Zero is every field's default. The quests that read the game's own
+        // state pick up where the save is without any help.
+        memset(&gSaveBlock3Ptr->questLog, 0, sizeof(gSaveBlock3Ptr->questLog));
+        gSaveBlock1Ptr->saveVersion = 12;
+    }
+    if (gSaveBlock1Ptr->saveVersion < 13)
+    {
+        // seenHigh was appended to the quest book's state: same reason as
+        // above, the bytes after it held whatever was in the sector buffer.
+        // Zero leaves a quest seen in a version 12 save at the lowest seen
+        // level, so a quest already at Reward or Completed shows NEW once.
+        memset(gSaveBlock3Ptr->questLog.seenHigh, 0, sizeof(gSaveBlock3Ptr->questLog.seenHigh));
+        gSaveBlock1Ptr->saveVersion = 13;
+    }
+    if (gSaveBlock1Ptr->saveVersion < 14)
+    {
+        // The strip menu's icon order was appended to SaveBlock3, after the
+        // quest book. Zero is the default order; garbage would also fall back
+        // to it (it is checked on every read), but a stray byte that happened
+        // to be a valid order would silently shuffle the menu.
+        memset(gSaveBlock3Ptr->stripMenuOrder, 0, sizeof(gSaveBlock3Ptr->stripMenuOrder));
+        gSaveBlock1Ptr->saveVersion = 14;
     }
 
     // Add version migration steps here:

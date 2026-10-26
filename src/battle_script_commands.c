@@ -1,5 +1,6 @@
 #include "global.h"
 #include "battle.h"
+#include "battle_partner.h"
 #include "battle_hold_effects.h"
 #include "battle_message.h"
 #include "option_menu.h"
@@ -77,6 +78,7 @@
 #include "data/battle_move_effects.h"
 #include "test/battle.h"
 #include "follower_npc.h"
+#include "level_scaling.h"
 #include "load_save.h"
 #include "nuzlocke.h"
 #include "test/test_runner_battle.h"
@@ -4143,7 +4145,8 @@ static void Cmd_getexp(void)
         if (IsOnPlayerSide(gBattlerFainted)
             || IsAiVsAiBattle()
             || !BattleTypeAllowsExp()
-            || FlagGet(FLAG_DISABLE_EXP_GAIN))
+            || FlagGet(FLAG_DISABLE_EXP_GAIN)
+            || IsRedsPathBattle()) // Red's team is only lent for the battle
         {
             gBattleScripting.getexpState = 6; // goto last case
         }
@@ -6214,7 +6217,8 @@ static void Cmd_hitanimation(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
-static u32 GetTrainerMoneyToGive(u16 trainerId)
+// firstPartySlot is where this trainer's mons start in gEnemyParty.
+static u32 GetTrainerMoneyToGive(u16 trainerId, u32 firstPartySlot)
 {
     u32 lastMonLevel = 0;
     u32 moneyReward;
@@ -6231,6 +6235,22 @@ static u32 GetTrainerMoneyToGive(u16 trainerId)
             return 20;
         lastMonLevel = party[GetTrainerPartySizeFromId(trainerId) - 1].lvl;
         trainerMoney = gTrainerClasses[GetTrainerClassFromId(trainerId)].money ?: 5;
+        if (IsTrainerLevelScalingEnabled())
+        {
+            // The party in battle, not the authored one: with level scaling
+            // the last mon fought can be well above what HnS wrote for it.
+            u32 lastSlot = GetTrainerPartySizeFromId(trainerId);
+            if (gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS && lastSlot > PARTY_SIZE / 2)
+                lastSlot = PARTY_SIZE / 2;
+            else if (lastSlot > PARTY_SIZE)
+                lastSlot = PARTY_SIZE;
+            if (lastSlot != 0)
+            {
+                lastSlot += firstPartySlot - 1;
+                if (GetMonData(&gEnemyParty[lastSlot], MON_DATA_LEVEL) > lastMonLevel)
+                    lastMonLevel = GetMonData(&gEnemyParty[lastSlot], MON_DATA_LEVEL);
+            }
+        }
 
         if (gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS)
             moneyReward = 4 * lastMonLevel * gBattleStruct->moneyMultiplier * trainerMoney;
@@ -6238,6 +6258,7 @@ static u32 GetTrainerMoneyToGive(u16 trainerId)
             moneyReward = 4 * lastMonLevel * gBattleStruct->moneyMultiplier * 2 * trainerMoney;
         else
             moneyReward = 4 * lastMonLevel * gBattleStruct->moneyMultiplier * trainerMoney;
+        moneyReward += moneyReward * GetTrainerScalingMoneyBonusPercent() / 100;
     }
 
     return moneyReward;
@@ -6252,9 +6273,9 @@ static void Cmd_getmoneyreward(void)
 
     if (gBattleOutcome == B_OUTCOME_WON)
     {
-        money = GetTrainerMoneyToGive(TRAINER_BATTLE_PARAM.opponentA);
+        money = GetTrainerMoneyToGive(TRAINER_BATTLE_PARAM.opponentA, 0);
         if (gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS)
-            money += GetTrainerMoneyToGive(TRAINER_BATTLE_PARAM.opponentB);
+            money += GetTrainerMoneyToGive(TRAINER_BATTLE_PARAM.opponentB, PARTY_SIZE / 2);
         AddMoney(&gSaveBlock1Ptr->money, money);
 #if IS_HNS
         if (Mom_IsSavingEnabled())
@@ -10607,6 +10628,8 @@ static void FinalizeCapture(void)
     MarkBattlerForControllerExec(gBattlerAttacker);
     TryBattleFormChange(gBattlerTarget, FORM_CHANGE_END_BATTLE, GetBattlerAbility(gBattlerTarget));
     gBattlescriptCurrInstr = BattleScript_SuccessBallThrow;
+    if (gBattleTypeFlags & BATTLE_TYPE_TRAINER)
+        RecordTrainerMonCaught(gBattlerTarget);
     struct Pokemon *caughtMon = GetBattlerMon(gBattlerTarget);
     SetMonData(caughtMon, MON_DATA_POKEBALL, &ballId);
 
@@ -12086,13 +12109,14 @@ void BS_ItemRestoreHP(void)
             healAmount = maxHP;
             break;
         case ITEM6_HEAL_HP_HALF:
-            healAmount = maxHP / 2;
+            // Shedinja has 1 max HP: maxHP / 2 would revive it with 0 HP.
+            healAmount = max(1, maxHP / 2);
             break;
         case ITEM6_HEAL_HP_QUARTER:
             if (gLastUsedItem == ITEM_SITRUS_BERRY && gSaveBlock3Ptr->challengeSettings.tx_Mode_New_Citrus == 0)
                 healAmount = 30;
             else
-                healAmount = maxHP / 4;
+                healAmount = max(1, maxHP / 4);
             break;
         default:
             healAmount = healParam;
@@ -13492,6 +13516,16 @@ void BS_JumpIfNoWhiteOut(void)
     NATIVE_ARGS(const u8 *jumpInstr);
 
     if (FlagGet(B_FLAG_NO_WHITEOUT))
+        gBattlescriptCurrInstr = cmd->jumpInstr;
+    else
+        gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+void BS_JumpIfRedsPathBattle(void)
+{
+    NATIVE_ARGS(const u8 *jumpInstr);
+
+    if (IsRedsPathBattle())
         gBattlescriptCurrInstr = cmd->jumpInstr;
     else
         gBattlescriptCurrInstr = cmd->nextInstr;

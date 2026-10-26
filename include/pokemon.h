@@ -3,6 +3,7 @@
 
 #include "contest_effect.h"
 #include "sprite.h"
+#include "wild_encounter_ow.h"
 #include "constants/battle.h"
 #include "constants/cries.h"
 #include "constants/egg_ids.h"
@@ -743,6 +744,7 @@ void ZeroMonData(struct Pokemon *mon);
 void ZeroPlayerPartyMons(void);
 void ZeroEnemyPartyMons(void);
 u32 GetMonPersonality(u16 species, u8 gender, u8 nature, u8 unownLetter);
+bool32 ComputePlayerShinyOdds(u32 personality, u32 value);
 void CreateMon(struct Pokemon *mon, u16 species, u8 level, u32 personality, struct OriginalTrainerId);
 void CreateRandomMon(struct Pokemon *mon, u16 species, u8 level);
 void CreateRandomMonWithIVs(struct Pokemon *mon, u16 species, u8 level, u8 fixedIv);
@@ -803,6 +805,7 @@ void SetMonData(struct Pokemon *mon, s32 field, const void *dataArg);
 void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg);
 void CopyMon(void *dest, void *src, size_t size);
 u8 GiveCapturedMonToPlayer(struct Pokemon *mon);
+void SetMonOtIdRekeyed(struct Pokemon *mon, const u8 *otIdBytes);
 u8 CopyMonToPC(struct Pokemon *mon);
 u8 CalculatePlayerPartyCount(void);
 u8 CalculateEnemyPartyCount(void);
@@ -888,6 +891,29 @@ u16 SpeciesToPokedexNum(u16 species);
 bool32 IsSpeciesInRegionalDex(u16 species);
 bool32 IsSpeciesInKantoDex(u16 species);
 bool32 IsSpeciesInHoennDex(u16 species);
+// Stored in soundAndFieldOptions.battleMusicTheme (3 bits) and used as the
+// index of the BATTLE MUSIC option, so the order here is the order in the menu.
+enum BattleMusicTheme
+{
+    BATTLE_MUSIC_THEME_DEFAULT, // regional, as before the option existed
+    BATTLE_MUSIC_THEME_HGSS_JOHTO,
+    BATTLE_MUSIC_THEME_HGSS_KANTO,
+    BATTLE_MUSIC_THEME_FRLG,
+    BATTLE_MUSIC_THEME_RSE,
+    BATTLE_MUSIC_THEME_DPPT,
+    BATTLE_MUSIC_THEME_RANDOM,
+    BATTLE_MUSIC_THEME_COUNT,
+};
+STATIC_ASSERT(BATTLE_MUSIC_THEME_COUNT <= 8, BattleMusicThemeFitsThreeBits);
+
+enum BattleMusicCategory
+{
+    BATTLE_MUSIC_CATEGORY_WILD,
+    BATTLE_MUSIC_CATEGORY_TRAINER,
+    BATTLE_MUSIC_CATEGORY_GYM, // Gym Leaders and the Elite Four
+    BATTLE_MUSIC_CATEGORY_COUNT,
+};
+
 u16 GetBattleBGM(void);
 void PlayBattleBGM(void);
 void PlayMapChosenOrBattleBGM(u16 songId);

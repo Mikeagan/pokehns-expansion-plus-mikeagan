@@ -52,6 +52,7 @@
 #include "constants/moves.h"
 #include "constants/mystery_gift.h"
 #include "constants/party_menu.h"
+#include "constants/quests.h"
 #include "constants/pokeball.h"
 #include "constants/pokedex.h"
 #include "constants/pokemon.h"
@@ -66,6 +67,8 @@
 #include "constants/species.h"
 #include "constants/trade.h"
 #include "constants/trainer_hill.h"
+#include "constants/tcloner.h"
+#include "constants/reds_path.h"
 #include "constants/trainer_tower.h"
 #include "constants/trainers.h"
 #include "constants/trainer_card.h"
@@ -1858,6 +1861,8 @@ EventScript_PalletTown_PlayersHouse_2F_TurnOnPC::
 	.include "data/scripts/dexnav.inc"
 	.include "data/scripts/battle_frontier.inc"
 	.include "data/scripts/apricorn_tree.inc"
+	.include "data/scripts/wild_encounter.inc"
+	.include "data/scripts/tcloner.inc"
 	
 
 .if IS_HNS
@@ -2395,5 +2400,7 @@ EventScript_PalletTown_PlayersHouse_2F_TurnOnPC::
 	.include "data/maps/UlaUla_Forest_hns/scripts.inc"
 	.include "data/maps/UlaUla_Cave_2_hns/scripts.inc"
 	.include "data/maps/Akala_Cave_hns/scripts.inc"
+
+	.include "data/scripts/reds_path.inc"
 
 .endif

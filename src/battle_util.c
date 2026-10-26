@@ -1,5 +1,6 @@
 #include "global.h"
 #include "battle.h"
+#include "battle_partner.h"
 #include "battle_anim.h"
 #include "battle_arena.h"
 #include "battle_environment.h"
@@ -616,7 +617,7 @@ bool32 TryRunFromBattle(enum BattlerId battler)
             if (speedVar > (Random() & 0xFF))
                 effect++;
         }
-        else if (gSaveBlock3Ptr->challengeSettings.tx_Challenges_LessEscapes)
+        else if (gSaveBlock3Ptr->challengeSettings.tx_Challenges_LessEscapes && !IsRedsPathBattle())
         {
             speedVar = (gBattleMons[battler].speed * 128) / (gBattleMons[runningFromBattler].speed) + (gBattleStruct->runTries * 30);
             if (speedVar > (Random() & 512))
@@ -10827,14 +10828,15 @@ bool32 IsAllowedToUseBag(void)
     }
 }
 
-// TRAINER CATCH (challenge menu, Features tab). Only the ordinary overworld
-// Trainer battles qualify. Facilities, link and recorded battles have their
+// The TcloneR key item (it replaced the TRAINER CATCH option of the challenge
+// menu): carrying it lets a Ball work on a Trainer's Pokemon. Only the ordinary
+// overworld Trainer battles qualify. Facilities, link and recorded battles have their
 // own bookkeeping that a caught Pokemon would break, a partner's party is not
 // the player's to add to, and Mirror Mode swaps the player's party back from a
 // backup at the end of the battle, which would throw the new catch away.
 bool32 CanCatchTrainerMon(void)
 {
-    if (!gSaveBlock3Ptr->challengeSettings.trainerCatch)
+    if (!CheckBagHasItem(ITEM_TCLONER, 1))
         return FALSE;
     if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
         return FALSE;
@@ -10852,6 +10854,9 @@ bool32 CanCatchTrainerMon(void)
     if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE)
         return FALSE;
     if (gSaveBlock3Ptr->challengeSettings.tx_Challenges_Mirror)
+        return FALSE;
+    // Red's Path is fought with Red's borrowed team: nothing is caught there.
+    if (IsRedsPathTrainer(TRAINER_BATTLE_PARAM.opponentA))
         return FALSE;
     return TRUE;
 }

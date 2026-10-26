@@ -21,6 +21,8 @@
 #include "constants/pokemon.h"
 #include "constants/easy_chat.h"
 #include "constants/trainer_hill.h"
+#include "constants/tcloner.h"
+#include "constants/quests.h"
 #include "constants/trainer_tower.h"
 #include "constants/items.h"
 #include "constants/moves.h"
@@ -355,12 +357,38 @@ struct ChallengeSettings
                              // be the ON side: 1 means "fall back to the plain
                              // DexNav HnS shipped". Ugly name, right polarity -
                              // see the bit polarity rule in CLAUDE.md.
-    u8 trainerCatch:1;       // 1 = Balls work on a Trainer's Pokemon, see
-                             // CanCatchTrainerMon. This bit used to be DEXNAV
-                             // SOULGOLD, so a save that went through those builds
-                             // can hold a 1 here: the SAVE_VERSION 7 migration
-                             // clears it. It was the last spare bit; the next
-                             // option has to grow the struct.
+    u8 unusedTrainerCatchBit:1; // was trainerCatch, the TRAINER CATCH option,
+                                // replaced by the TcloneR key item. Cleared by the
+                                // SAVE_VERSION 9 migration, so it is free again:
+                                // the only spare bit.
+};
+
+// Quest book (src/quest_log.c). Every bit reads 0 as its default: not a
+// favourite, not seen yet, locked, not done.
+struct QuestLogSaveData
+{
+    u8 favorite[QUEST_SAVE_MAX_QUESTS / 8];
+    u8 seen[QUEST_SAVE_MAX_QUESTS / 8];
+    u8 ownStates[QUEST_SAVE_MAX_OWN_SLOTS / 2]; // a QUEST_STATE_* nibble per own slot
+    u8 subquests[QUEST_SAVE_MAX_SUBQUESTS / 8];
+    // Appended in SAVE_VERSION 13: with seen, a 2-bit level per quest (seen is
+    // bit 0, this bit 1), so that NEW comes back when a quest moves on to
+    // Reward or Completed (QuestLog_IsNew).
+    u8 seenHigh[QUEST_SAVE_MAX_QUESTS / 8];
+};
+
+struct SoundAndFieldOptions
+{
+    u8 fastHms:1;            // 0 = off (default, as in Soulgold)
+    u8 battleMusicTheme:3;   // enum BattleMusicTheme, 0 = DEFAULT
+    u8 noNightCenterMusic:1; // stored inverted: 0 = night theme ON (default)
+    u8 unusedOverworldMonsBit:1; // was noOverworldMons (PC switch, removed): can be 1 in saves, clear it before reuse
+    // Both bits were never written by any build (zeroed by the saveVersion < 8
+    // migration), so no new migration: 0 = OFF, as before.
+    u8 levelScaling:1;        // 0 = off (default): trainers, wild and scripted battles
+    u8 unusedLevelScalingBit:1; // was wildLevelScaling, when it was a separate option
+                                // (shipped for a few hours): ignored, but a save from that
+                                // build can have it at 1, clear it before reuse
 };
 
 struct SaveBlock3
@@ -386,6 +414,17 @@ struct SaveBlock3
     // Saves written before this existed carry junk here, which the SAVE_VERSION
     // 6 migration in LoadGameSave zeroes.
     u32 candyJarExp;
+    // Appended after candyJarExp (SAVE_VERSION 8). Every field reads 0 as its
+    // default, so a fresh save and a migrated one agree without extra code.
+    struct SoundAndFieldOptions soundAndFieldOptions;
+    // Appended after soundAndFieldOptions (SAVE_VERSION 12), which zeroes it
+    // in older saves.
+    struct QuestLogSaveData questLog;
+    // Appended after questLog (SAVE_VERSION 14): the order of the pause menu
+    // strip's icons (src/strip_start_menu.c), one nibble per slot holding
+    // icon id + 1. All zero - a new game or a migrated save - is the default
+    // order, and so is anything that is not a full permutation.
+    u8 stripMenuOrder[4];
 }; /* max size 1624 bytes */
 
 extern struct SaveBlock3 *gSaveBlock3Ptr;
@@ -399,8 +438,15 @@ struct Pokedex
     /*0x04*/ u32 unownPersonality; // set when you first see Unown
     /*0x08*/ u32 spindaPersonality; // set when you first see Spinda
     /*0x0C*/ u32 unknown3;
+    // Trainers whose Pokemon the TcloneR has already cloned: each one counts
+    // once (src/tcloner.c). Carved out of the front of Emerald's old dex flags
+    // filler, which nothing reads or writes, so SaveBlock2 keeps its layout;
+    // the SAVE_VERSION 9 migration zeroes it in older saves (and 10 the byte
+    // Red's Path added). It sits outside
+    // the #if below so that freeing the filler cannot take it along.
+    /*0x10*/ u8 tclonerTrainerFlags[TCLONER_TRAINER_FLAGS_BYTES];
 #if FREE_EXTRA_SEEN_FLAGS_SAVEBLOCK2 == FALSE
-    /*0x10*/ u8 filler[0x68]; // Previously Dex Flags, feel free to remove.
+    /*0x63*/ u8 filler[0x68 - TCLONER_TRAINER_FLAGS_BYTES]; // Previously Dex Flags, feel free to remove.
 #endif //FREE_EXTRA_SEEN_FLAGS_SAVEBLOCK2
 };
 

@@ -42,6 +42,7 @@
 #include "pokemon_summary_screen.h"
 #include "pokemon_storage_system.h"
 #include "pokerus.h"
+#include "option_menu.h"
 #include "random.h"
 #include "randomizer.h"
 #include "nuzlocke.h"
@@ -3228,6 +3229,43 @@ void CreateMonWithIVs(struct Pokemon *mon, u16 species, u8 level, u32 personalit
     CalculateMonStats(mon);
 }
 
+bool32 ComputePlayerShinyOdds(u32 personality, u32 value)
+{
+    if (P_FLAG_FORCE_NO_SHINY != 0 && FlagGet(P_FLAG_FORCE_NO_SHINY))
+        return FALSE;
+    
+    if (P_FLAG_FORCE_SHINY != 0 && FlagGet(P_FLAG_FORCE_SHINY))
+        return TRUE;
+    
+    if (P_ONLY_OBTAINABLE_SHINIES && (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || (B_FLAG_NO_CATCHING != 0 && FlagGet(B_FLAG_NO_CATCHING))))
+        return FALSE;
+    
+    if (P_NO_SHINIES_WITHOUT_POKEBALLS && !HasAtLeastOnePokeBall())
+        return FALSE;
+
+    u32 totalRerolls = 0;
+    
+    if (CheckBagHasItem(ITEM_SHINY_CHARM, 1))
+        totalRerolls += I_SHINY_CHARM_ADDITIONAL_ROLLS;
+
+    if (LURE_STEP_COUNT != 0)
+        totalRerolls += 1;
+
+    totalRerolls += CalculateChainFishingShinyRolls();
+
+    if (gDexNavSpecies)
+        totalRerolls += CalculateDexNavShinyRolls();
+
+    // Hasep: GetShinyOdds() honours the challenge setting, where upstream reads SHINY_ODDS.
+    while (GET_SHINY_VALUE(value, personality) >= GetShinyOdds() && totalRerolls > 0)
+    {
+        personality = Random32();
+        totalRerolls--;
+    }
+
+    return GET_SHINY_VALUE(value, personality) < GetShinyOdds();
+}
+
 void SetBoxMonIVs(struct BoxPokemon *mon, u8 fixedIV)
 {
     u32 i, value;
@@ -3320,42 +3358,7 @@ void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u32 personal
     else // Player is the OT
     {
         value = READ_OTID_FROM_SAVE;
-        if (P_FLAG_FORCE_NO_SHINY != 0 && FlagGet(P_FLAG_FORCE_NO_SHINY))
-        {
-            isShiny = FALSE;
-        }
-        else if (P_FLAG_FORCE_SHINY != 0 && FlagGet(P_FLAG_FORCE_SHINY))
-        {
-            isShiny = TRUE;
-        }
-        else if (P_ONLY_OBTAINABLE_SHINIES && (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || (B_FLAG_NO_CATCHING != 0 && FlagGet(B_FLAG_NO_CATCHING))))
-        {
-            isShiny = FALSE;
-        }
-        else if (P_NO_SHINIES_WITHOUT_POKEBALLS && !HasAtLeastOnePokeBall())
-        {
-            isShiny = FALSE;
-        }
-        else
-        {
-            u32 totalRerolls = 0;
-            if (CheckBagHasItem(ITEM_SHINY_CHARM, 1))
-                totalRerolls += I_SHINY_CHARM_ADDITIONAL_ROLLS;
-            if (LURE_STEP_COUNT != 0)
-                totalRerolls += 1;
-            totalRerolls += CalculateChainFishingShinyRolls();
-            if (gDexNavSpecies)
-                totalRerolls += CalculateDexNavShinyRolls();
-
-            u32 shinyPersonality = personality;
-            while (GET_SHINY_VALUE(value, shinyPersonality) >= GetShinyOdds() && totalRerolls > 0)
-            {
-                shinyPersonality = Random32();
-                totalRerolls--;
-            }
-
-            isShiny = GET_SHINY_VALUE(value, shinyPersonality) < GetShinyOdds();
-        }
+        isShiny = ComputePlayerShinyOdds(personality, value);
     }
 
     SetBoxMonData(boxMon, MON_DATA_PERSONALITY, &personality);
@@ -3402,6 +3405,20 @@ static bool32 IsValidGender(u32 gender)
     }
 }
 
+static void CleanIncompatibleGenderSpecies(u32 species, u8 *gender)
+{
+    switch (gSpeciesInfo[species].genderRatio)
+    {
+    case MON_MALE:
+    case MON_FEMALE:
+    case MON_GENDERLESS:
+        *gender = MON_GENDER_RANDOM;
+        return;
+    }
+    if (*gender == MON_GENDERLESS)
+        *gender = MON_GENDER_RANDOM;
+}
+
 u32 GetMonPersonality(u16 species, u8 gender, u8 nature, u8 unownLetter)
 {
     u32 personality, actualLetter;
@@ -3421,14 +3438,14 @@ u32 GetMonPersonality(u16 species, u8 gender, u8 nature, u8 unownLetter)
         unownLetter = RANDOM_UNOWN_LETTER;
     }
 
-    //gender outside valid gender ratios for species is not asserted because it could be triggered by cute charm
+    CleanIncompatibleGenderSpecies(species, &gender);
     do
     {
         personality = Random32();
         actualLetter = GET_UNOWN_LETTER(personality);
     }
     while ((nature != GetNatureFromPersonality(personality) && nature != NATURE_RANDOM)
-            || (gender != GetGenderFromSpeciesAndPersonality(species, personality) && gender != MON_GENDER_RANDOM)
+            || (gender != MON_GENDER_RANDOM && gender != GetGenderFromSpeciesAndPersonality(species, personality))
             || ((actualLetter != unownLetter - 1) && unownLetter > 0));
     return personality;
 }
@@ -5385,7 +5402,7 @@ void CopyMon(void *dest, void *src, size_t size)
 // (TRAINER CATCH) does not, and a raw write left it undecryptable: a Bad Egg on
 // its next read. Re-key the substructs, and keep shininess, which is stored
 // relative to the OT ID (shinyModifier).
-static void SetMonOtIdRekeyed(struct Pokemon *mon, const u8 *otIdBytes)
+void SetMonOtIdRekeyed(struct Pokemon *mon, const u8 *otIdBytes)
 {
     struct BoxPokemon *boxMon = &mon->box;
     u32 otId = otIdBytes[0] | (otIdBytes[1] << 8) | (otIdBytes[2] << 16) | (otIdBytes[3] << 24);
@@ -5422,7 +5439,9 @@ u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
         return CopyMonToPC(mon);
 
     CopyMon(&gPlayerParty[i], mon, sizeof(*mon));
-    gPlayerPartyCount = i + 1;
+    // The swap-into-party prompt can empty a middle slot of a full party,
+    // so i + 1 would undercount it.
+    CalculatePlayerPartyCount();
     return MON_GIVEN_TO_PARTY;
 }
 
@@ -8053,8 +8072,111 @@ bool32 IsSpeciesInHoennDex(u16 species)
         return TRUE;
 }
 
+static const u16 sBattleMusicThemeSongs[BATTLE_MUSIC_THEME_COUNT][BATTLE_MUSIC_CATEGORY_COUNT] =
+{
+    [BATTLE_MUSIC_THEME_HGSS_JOHTO] =
+    {
+        [BATTLE_MUSIC_CATEGORY_WILD] = MUS_HG_VS_WILD,
+        [BATTLE_MUSIC_CATEGORY_TRAINER] = MUS_HG_VS_TRAINER,
+        [BATTLE_MUSIC_CATEGORY_GYM] = MUS_HG_VS_GYM_LEADER,
+    },
+    [BATTLE_MUSIC_THEME_HGSS_KANTO] =
+    {
+        [BATTLE_MUSIC_CATEGORY_WILD] = MUS_HG_VS_WILD_KANTO,
+        [BATTLE_MUSIC_CATEGORY_TRAINER] = MUS_HG_VS_TRAINER_KANTO,
+        [BATTLE_MUSIC_CATEGORY_GYM] = MUS_HG_VS_GYM_LEADER_KANTO,
+    },
+    [BATTLE_MUSIC_THEME_FRLG] =
+    {
+        [BATTLE_MUSIC_CATEGORY_WILD] = MUS_RG_VS_WILD,
+        [BATTLE_MUSIC_CATEGORY_TRAINER] = MUS_RG_VS_TRAINER,
+        [BATTLE_MUSIC_CATEGORY_GYM] = MUS_RG_VS_GYM_LEADER,
+    },
+    [BATTLE_MUSIC_THEME_RSE] =
+    {
+        [BATTLE_MUSIC_CATEGORY_WILD] = MUS_VS_WILD,
+        [BATTLE_MUSIC_CATEGORY_TRAINER] = MUS_VS_TRAINER,
+        [BATTLE_MUSIC_CATEGORY_GYM] = MUS_VS_GYM_LEADER,
+    },
+    [BATTLE_MUSIC_THEME_DPPT] =
+    {
+        [BATTLE_MUSIC_CATEGORY_WILD] = MUS_DP_VS_WILD,
+        [BATTLE_MUSIC_CATEGORY_TRAINER] = MUS_DP_VS_TRAINER,
+        [BATTLE_MUSIC_CATEGORY_GYM] = MUS_DP_VS_GYM_LEADER,
+    },
+};
+
+// regionalSong is what GetBattleBGM() would have played without the option, so
+// DEFAULT keeps every region's own themes (incl. the Trainer Hill correction).
+// RANDOM picks one concrete theme per call; GetBattleBGM() runs once per battle.
+// Random2() so the choice does not advance the RNG that battles and encounters use.
+static u16 GetThemedBattleBGM(enum BattleMusicTheme theme, enum BattleMusicCategory category, u16 regionalSong)
+{
+    if (theme == BATTLE_MUSIC_THEME_DEFAULT || theme >= BATTLE_MUSIC_THEME_COUNT)
+        return regionalSong;
+    if (theme == BATTLE_MUSIC_THEME_RANDOM)
+        theme = BATTLE_MUSIC_THEME_HGSS_JOHTO + Random2() % (BATTLE_MUSIC_THEME_RANDOM - BATTLE_MUSIC_THEME_HGSS_JOHTO);
+
+    return sBattleMusicThemeSongs[theme][category];
+}
+
+static u16 GetRegionalTrainerBGM(void)
+{
+#if IS_HNS
+    // Trainer Hill and the three Battle Tents in its courtyard all use
+    // MAPSEC_TRAINER_HILL, which sits outside every range in GetRegionForSectionId
+    // and so falls through to REGION_HOENN and the Emerald theme. The facility is
+    // in Johto. Corrected here rather than in GetRegionForSectionId, which feeds
+    // far more than music, and inside default so class cases still take priority.
+    if (gMapHeader.regionMapSectionId == MAPSEC_TRAINER_HILL)
+        return MUS_HG_VS_TRAINER;
+    if (GetCurrentRegion() == REGION_JOHTO)
+        return MUS_HG_VS_TRAINER;
+    else if (GetCurrentRegion() == REGION_KANTO)
+        return MUS_HG_VS_TRAINER_KANTO;
+    else if (GetCurrentRegion() == REGION_ALOLA)
+        return MUS_HG_VS_TRAINER_KANTO;  // Alola trainer battles
+    else if (GetCurrentRegion() == REGION_HISUI)
+        return MUS_HG_VS_TRAINER;        // Sinjoh keeps the Johto theme
+    else
+        return MUS_VS_TRAINER;
+#else
+    if (GetCurrentRegion() == REGION_KANTO)
+        return MUS_RG_VS_TRAINER;
+    else
+        return MUS_VS_TRAINER;
+#endif
+}
+
+static u16 GetRegionalWildBGM(void)
+{
+#if IS_HNS
+    if (GetCurrentRegion() == REGION_JOHTO)
+        return MUS_HG_VS_WILD;
+    else if (GetCurrentRegion() == REGION_KANTO)
+        return MUS_HG_VS_WILD_KANTO;
+    else if (GetCurrentRegion() == REGION_ALOLA)
+        return MUS_HG_VS_WILD_KANTO;  // Alola wild battles
+    else if (GetCurrentRegion() == REGION_HISUI)
+        return MUS_HG_VS_WILD;        // Sinjoh keeps the Johto theme
+    else
+        return MUS_VS_WILD;
+#else
+    if (GetCurrentRegion() == REGION_KANTO)
+        return MUS_RG_VS_WILD;
+    else
+        return MUS_VS_WILD;
+#endif
+}
+
 u16 GetBattleBGM(void)
 {
+    enum BattleMusicTheme theme = GetBattleMusicTheme();
+
+    // Facility battles keep their own music whatever the option says.
+    if (gBattleTypeFlags & (BATTLE_TYPE_FRONTIER | BATTLE_TYPE_TRAINER_HILL))
+        theme = BATTLE_MUSIC_THEME_DEFAULT;
+
     if (gBattleTypeFlags & BATTLE_TYPE_LEGENDARY)
     {
         switch (GetMonData(&gEnemyParty[0], MON_DATA_SPECIES))
@@ -8101,11 +8223,11 @@ u16 GetBattleBGM(void)
         case TRAINER_CLASS_MAGMA_ADMIN:
             return MUS_VS_AQUA_MAGMA;
         case TRAINER_CLASS_LEADER:
-            return MUS_VS_GYM_LEADER;
+            return GetThemedBattleBGM(theme, BATTLE_MUSIC_CATEGORY_GYM, MUS_VS_GYM_LEADER);
         case TRAINER_CLASS_LEADER_HNS:
-            return MUS_HG_VS_GYM_LEADER;
+            return GetThemedBattleBGM(theme, BATTLE_MUSIC_CATEGORY_GYM, MUS_HG_VS_GYM_LEADER);
         case TRAINER_CLASS_LEADER_KANTO_HNS:
-            return MUS_HG_VS_GYM_LEADER_KANTO;
+            return GetThemedBattleBGM(theme, BATTLE_MUSIC_CATEGORY_GYM, MUS_HG_VS_GYM_LEADER_KANTO);
         case TRAINER_CLASS_CHAMPION:
             return MUS_VS_CHAMPION;
         case TRAINER_CLASS_PKMN_TRAINER_1_HNS:
@@ -8131,16 +8253,18 @@ u16 GetBattleBGM(void)
         case TRAINER_CLASS_TEAM_ROCKET_HNS:
             return MUS_HG_VS_ROCKET;
         case TRAINER_CLASS_ELITE_FOUR:
-            return MUS_VS_ELITE_FOUR;
+            return GetThemedBattleBGM(theme, BATTLE_MUSIC_CATEGORY_GYM, MUS_VS_ELITE_FOUR);
         case TRAINER_CLASS_ELITE_FOUR_HNS:
             // GSC/HGSS reuse the Johto Gym Leader theme for the Elite Four.
-            return MUS_HG_VS_GYM_LEADER;
+            return GetThemedBattleBGM(theme, BATTLE_MUSIC_CATEGORY_GYM, MUS_HG_VS_GYM_LEADER);
         case TRAINER_CLASS_CHAMPION_FRLG:
         case TRAINER_CLASS_DEVELOPER_HNS:
             return MUS_RG_VS_CHAMPION;
         case TRAINER_CLASS_LEADER_FRLG:
         case TRAINER_CLASS_ELITE_FOUR_FRLG:
+            return GetThemedBattleBGM(theme, BATTLE_MUSIC_CATEGORY_GYM, MUS_RG_VS_GYM_LEADER);
         case TRAINER_CLASS_PROFESSOR_HNS:
+            // Not a Gym or Elite Four fight, so the option does not apply.
             return MUS_RG_VS_GYM_LEADER;
         case TRAINER_CLASS_SALON_MAIDEN:
         case TRAINER_CLASS_DOME_ACE:
@@ -8158,51 +8282,12 @@ u16 GetBattleBGM(void)
         case TRAINER_CLASS_PYRAMID_KING_HNS:
             return MUS_VS_FRONTIER_BRAIN;
         default:
-        #if IS_HNS
-            // Trainer Hill and the three Battle Tents in its courtyard all use
-            // MAPSEC_TRAINER_HILL, which sits outside every range in GetRegionForSectionId
-            // and so falls through to REGION_HOENN and the Emerald theme. The facility is
-            // in Johto. Corrected here rather than in GetRegionForSectionId, which feeds
-            // far more than music, and inside default so class cases still take priority.
-            if (gMapHeader.regionMapSectionId == MAPSEC_TRAINER_HILL)
-                return MUS_HG_VS_TRAINER;
-            if (GetCurrentRegion() == REGION_JOHTO)
-                return MUS_HG_VS_TRAINER;
-            else if (GetCurrentRegion() == REGION_KANTO)
-                return MUS_HG_VS_TRAINER_KANTO;
-            else if (GetCurrentRegion() == REGION_ALOLA)
-                return MUS_HG_VS_TRAINER_KANTO;  // Alola trainer battles
-            else if (GetCurrentRegion() == REGION_HISUI)
-                return MUS_HG_VS_TRAINER;        // Sinjoh keeps the Johto theme
-            else
-                return MUS_VS_TRAINER;
-        #else
-            if (GetCurrentRegion() == REGION_KANTO)
-                return MUS_RG_VS_TRAINER;
-            else
-                return MUS_VS_TRAINER;
-        #endif
+            return GetThemedBattleBGM(theme, BATTLE_MUSIC_CATEGORY_TRAINER, GetRegionalTrainerBGM());
         }
     }
     else
     {
-    #if IS_HNS
-        if (GetCurrentRegion() == REGION_JOHTO)
-            return MUS_HG_VS_WILD;
-        else if (GetCurrentRegion() == REGION_KANTO)
-            return MUS_HG_VS_WILD_KANTO;
-        else if (GetCurrentRegion() == REGION_ALOLA)
-            return MUS_HG_VS_WILD_KANTO;  // Alola wild battles
-        else if (GetCurrentRegion() == REGION_HISUI)
-            return MUS_HG_VS_WILD;        // Sinjoh keeps the Johto theme
-        else
-            return MUS_VS_WILD;
-    #else
-        if (GetCurrentRegion() == REGION_KANTO)
-            return MUS_RG_VS_WILD;
-        else
-            return MUS_VS_WILD;
-    #endif
+        return GetThemedBattleBGM(theme, BATTLE_MUSIC_CATEGORY_WILD, GetRegionalWildBGM());
     }
 }
 

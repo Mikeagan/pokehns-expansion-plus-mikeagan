@@ -2505,8 +2505,11 @@ BattleScript_MirrorArmorDoesntAffect:
 	return
 
 BattleScript_MirrorArmorReflectWontFall:
+	savetarget
 	copybyte gBattlerTarget, gBattlerAttacker   @ STRINGID_STATSWONTDECREASE uses target
-	goto BattleScript_MirrorArmorReflectPrintString
+	call BattleScript_MirrorArmorReflectPrintString
+	restoretarget
+	return
 
 @ gBattlerTarget is battler with Mirror Armor
 BattleScript_MirrorArmorReflectStickyWeb:
@@ -4156,6 +4159,8 @@ BattleScript_LocalBattleWonLoseTexts::
 	waitstate
 	printstring STRINGID_TRAINER2LOSETEXT
 BattleScript_LocalBattleWonReward::
+	@ Red's Path replays a battle Red already won: there is no prize to collect.
+	jumpifredspathbattle BattleScript_PayDayMoneyAndPickUpItems
 	getmoneyreward
 	printstring STRINGID_PLAYERGOTMONEY
 	waitmessage B_WAIT_TIME_LONG
@@ -6478,6 +6483,7 @@ BattleScript_BadDreamsIncrement:
 	jumpifbytenotequal gBattlerTarget, gBattlersCount, BattleScript_BadDreamsLoop
 	jumpifbyteequal sFIXED_ABILITY_POPUP, sZero, BattleScript_BadDreamsEnd
 	destroyabilitypopup
+	setbyte sFIXED_ABILITY_POPUP, FALSE
 	pause 15
 BattleScript_BadDreamsEnd:
 	end2

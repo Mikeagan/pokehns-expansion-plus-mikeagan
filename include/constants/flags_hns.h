@@ -961,22 +961,22 @@
 #define FLAG_ULAULA_MOVE_TUTOR_PAID                 (HNS_EXTENDED_CONTENT_START + 77) // paid the Ula'ula move tutor his 5 HEART SCALES
 #define FLAG_USED_TELEPORTER                    (HNS_EXTENDED_CONTENT_START + 78)
 #define FLAG_UNUSED_EXTENDED_79                   (HNS_EXTENDED_CONTENT_START + 79)
-#define FLAG_UNUSED_EXTENDED_80                    (HNS_EXTENDED_CONTENT_START + 80)
-#define FLAG_UNUSED_EXTENDED_81                    (HNS_EXTENDED_CONTENT_START + 81)
-#define FLAG_UNUSED_EXTENDED_82                    (HNS_EXTENDED_CONTENT_START + 82)
-#define FLAG_UNUSED_EXTENDED_83                     (HNS_EXTENDED_CONTENT_START + 83)
-#define FLAG_UNUSED_EXTENDED_84                     (HNS_EXTENDED_CONTENT_START + 84)
-#define FLAG_UNUSED_EXTENDED_85                     (HNS_EXTENDED_CONTENT_START + 85)
-#define FLAG_UNUSED_EXTENDED_86                     (HNS_EXTENDED_CONTENT_START + 86)
-#define FLAG_UNUSED_EXTENDED_87                     (HNS_EXTENDED_CONTENT_START + 87)
-#define FLAG_UNUSED_EXTENDED_88                     (HNS_EXTENDED_CONTENT_START + 88)
-#define FLAG_UNUSED_EXTENDED_89                     (HNS_EXTENDED_CONTENT_START + 89)
-#define FLAG_UNUSED_EXTENDED_90                     (HNS_EXTENDED_CONTENT_START + 90)
-#define FLAG_UNUSED_EXTENDED_91                     (HNS_EXTENDED_CONTENT_START + 91)
-#define FLAG_UNUSED_EXTENDED_92                     (HNS_EXTENDED_CONTENT_START + 92)
-#define FLAG_UNUSED_EXTENDED_93                     (HNS_EXTENDED_CONTENT_START + 93)
-#define FLAG_UNUSED_EXTENDED_94                     (HNS_EXTENDED_CONTENT_START + 94)
-#define FLAG_UNUSED_EXTENDED_95                     (HNS_EXTENDED_CONTENT_START + 95)
+#define FLAG_HIDE_TCLONER_AZALEA                   (HNS_EXTENDED_CONTENT_START + 80) // TcloneR scientist, set by TCloner_EventScript_UpdateNpcs
+#define FLAG_HIDE_TCLONER_HIDEOUT                  (HNS_EXTENDED_CONTENT_START + 81) // TcloneR scientist, set by TCloner_EventScript_UpdateNpcs
+#define FLAG_HIDE_TCLONER_MAHOGANY                 (HNS_EXTENDED_CONTENT_START + 82) // TcloneR scientist, set by TCloner_EventScript_UpdateNpcs
+#define FLAG_HIDE_TCLONER_GOLDENROD                (HNS_EXTENDED_CONTENT_START + 83) // TcloneR scientist, set by TCloner_EventScript_UpdateNpcs
+#define FLAG_HIDE_TCLONER_CERULEAN                 (HNS_EXTENDED_CONTENT_START + 84) // TcloneR scientist, set by TCloner_EventScript_UpdateNpcs
+#define FLAG_HIDE_TCLONER_PALLET                   (HNS_EXTENDED_CONTENT_START + 85) // TcloneR scientist, set by TCloner_EventScript_UpdateNpcs
+#define FLAG_REDS_PATH_BATTLE                      (HNS_EXTENDED_CONTENT_START + 86) // Red's Path battle under way: no randomizer or challenges (data/scripts/reds_path.inc)
+#define FLAG_REDS_PATH_INTRO_SEEN                  (HNS_EXTENDED_CONTENT_START + 87) // Red's Path: the aide's introduction was shown
+#define FLAG_REDS_PATH_PRIZE_BROCK                 (HNS_EXTENDED_CONTENT_START + 88) // Red's Path: prize collected (data/scripts/reds_path.inc)
+#define FLAG_REDS_PATH_PRIZE_MISTY                 (HNS_EXTENDED_CONTENT_START + 89) // Red's Path: prize collected (data/scripts/reds_path.inc)
+#define FLAG_REDS_PATH_PRIZE_SURGE                 (HNS_EXTENDED_CONTENT_START + 90) // Red's Path: prize collected (data/scripts/reds_path.inc)
+#define FLAG_REDS_PATH_PRIZE_ERIKA                 (HNS_EXTENDED_CONTENT_START + 91) // Red's Path: prize collected (data/scripts/reds_path.inc)
+#define FLAG_REDS_PATH_PRIZE_KOGA                  (HNS_EXTENDED_CONTENT_START + 92) // Red's Path: prize collected (data/scripts/reds_path.inc)
+#define FLAG_REDS_PATH_PRIZE_SABRINA               (HNS_EXTENDED_CONTENT_START + 93) // Red's Path: prize collected (data/scripts/reds_path.inc)
+#define FLAG_REDS_PATH_PRIZE_BLAINE                (HNS_EXTENDED_CONTENT_START + 94) // Red's Path: prize collected (data/scripts/reds_path.inc)
+#define FLAG_REDS_PATH_PRIZE_GIOVANNI              (HNS_EXTENDED_CONTENT_START + 95) // Red's Path: prize collected (data/scripts/reds_path.inc)
 #define FLAG_UNUSED_EXTENDED_96                     (HNS_EXTENDED_CONTENT_START + 96)
 #define FLAG_UNUSED_EXTENDED_97                     (HNS_EXTENDED_CONTENT_START + 97)
 #define FLAG_UNUSED_EXTENDED_98                     (HNS_EXTENDED_CONTENT_START + 98)

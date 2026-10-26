@@ -18,6 +18,7 @@
 #include "gpu_regs.h"
 #include "graphics.h"
 #include "item.h"
+#include "level_scaling.h"
 #include "international_string_util.h"
 #include "m4a.h"
 #include "map_name_popup.h"
@@ -1021,6 +1022,14 @@ static void DexNavSearchBail(const u8 *script)
     ScriptContext_SetupScript(script);
 }
 
+// Flash does not light a cave fully: EventScript_UseFlash and SetDefaultFlashLevel
+// both leave the level at 1 (the widest radius), never 0. Checking "> 0" therefore
+// kept the DexNav dark in Dark Cave even after Flash.
+static bool32 IsTooDarkToSearch(void)
+{
+    return GetFlashLevel() > 1;
+}
+
 static bool8 InitDexNavSearch(u32 species, u32 environment)
 {
 #if USE_DEXNAV_SEARCH_LEVELS == DEXNAV_SEARCH_LEVELS_REGISTERED_SPECIES
@@ -1035,6 +1044,10 @@ static bool8 InitDexNavSearch(u32 species, u32 environment)
         return TRUE;
     }
     FlagSet(DN_FLAG_SEARCHING);
+    // Hasep: upstream clears generated OWEs only in Task_DexNavExitAndSearch,
+    // i.e. for searches started from the DexNav screen. Ours also start from R
+    // (TryStartDexNavSearch), which reaches here without passing through it.
+    DespawnAllOverworldWildEncounters(OWE_GENERATED, 0);
 
     // assign non-objects to struct
     sDexNavSearchDataPtr->species = species;
@@ -1042,7 +1055,7 @@ static bool8 InitDexNavSearch(u32 species, u32 environment)
     sDexNavSearchDataPtr->isHiddenMon = (environment == ENCOUNTER_TYPE_HIDDEN) ? TRUE : FALSE;
     sDexNavSearchDataPtr->monLevel = DexNavTryGenerateMonLevel(species, environment);
 
-    if (GetFlashLevel() > 1) //FLASH USED IN DARK OR FULL BRIGHT
+    if (IsTooDarkToSearch())
     {
         DexNavSearchBail(EventScript_TooDark);
         return TRUE;
@@ -1449,8 +1462,12 @@ static u8 DexNavTryGenerateMonLevel(u16 species, enum EncounterType environment)
     if (levelBase == MON_LEVEL_NONEXISTENT)
         return MON_LEVEL_NONEXISTENT;   //species not found in the area
 
+    // Scaled here, not in CreateWildMon: the search window shows this level
+    // before the battle, and the battle must match it.
+    levelBase = GetWildScaledLevel(levelBase);
+
     if (Random() % 100 < 4)
-        levelBonus += 2; //4% chance of having a +10 level -> +2
+        levelBonus += 10; //4% chance of having a +10 level
 
     if (levelBase + levelBonus > MAX_LEVEL)
         return MAX_LEVEL;
@@ -2090,6 +2107,7 @@ static void CB1_DexNavSearchCallback(void)
 
 static void Task_DexNavExitAndSearch(u8 taskId)
 {
+    DespawnAllOverworldWildEncounters(OWE_GENERATED, 0);
     DexNavGuiFreeResources();
     DestroyTask(taskId);
     SetMainCallback1(CB1_DexNavSearchCallback);
@@ -2859,7 +2877,7 @@ bool32 TryFindHiddenPokemon(void)
     if (DEXNAV_ENABLED == 0
             || !FlagGet(DN_FLAG_DETECTOR_MODE)
             || FlagGet(DN_FLAG_SEARCHING)
-            || GetFlashLevel() > 0)
+            || IsTooDarkToSearch())
     {
         if (stepPtr != NULL)
             (*stepPtr) = 0;

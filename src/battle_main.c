@@ -1,5 +1,6 @@
 #include "global.h"
 #include "battle.h"
+#include "battle_partner.h"
 #include "battle_anim.h"
 #include "challenge_menu.h"
 #include "battle_ai_main.h"
@@ -33,6 +34,7 @@
 #include "gpu_regs.h"
 #include "international_string_util.h"
 #include "item.h"
+#include "level_scaling.h"
 #include "link.h"
 #include "link_rfu.h"
 #include "load_save.h"
@@ -665,6 +667,7 @@ static void CB2_InitBattleInternal(void)
             CalculateEnemyPartyCount();
 
             if (gSaveBlock3Ptr->challengeSettings.tx_Challenges_Mirror
+             && !IsRedsPathBattle()
              && (gBattleTypeFlags & (BATTLE_TYPE_TRAINER | BATTLE_TYPE_DOUBLE)))
             {
                 if (!gSaveBlock3Ptr->challengeSettings.tx_Challenges_Mirror_Thief)
@@ -2085,7 +2088,8 @@ void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon 
     }
 }
 
-u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer *trainer, bool32 firstTrainer, u32 battleTypeFlags)
+// trainerId seeds the level scaling variation; TRAINER_NONE leaves it off.
+static u8 CreateNPCTrainerPartyFromTrainerWithId(struct Pokemon *party, const struct Trainer *trainer, u16 trainerId, bool32 firstTrainer, u32 battleTypeFlags)
 {
     u32 personalityValue;
     s32 i;
@@ -2111,6 +2115,16 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
 
         u32 monIndices[monsCount];
         DoTrainerPartyPool(trainer, monIndices, monsCount, battleTypeFlags);
+
+        // Level scaling works on the mons actually picked: the ace is the
+        // highest authored level among them, see src/level_scaling.c.
+        u32 authoredAceLevel = 1;
+        for (i = 0; i < monsCount; i++)
+        {
+            if (trainer->party[monIndices[i]].lvl > authoredAceLevel)
+                authoredAceLevel = trainer->party[monIndices[i]].lvl;
+        }
+        u32 scaledAceLevel = GetTrainerScaledAceLevel(trainerId, party, battleTypeFlags, authoredAceLevel);
 
         for (i = 0; i < monsCount; i++)
         {
@@ -2145,10 +2159,13 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
             }
             {
                 u16 species = partyData[monIndex].species;
+                u8 level = GetTrainerScaledMonLevel(scaledAceLevel, authoredAceLevel, partyData[monIndex].lvl);
                 #if RANDOMIZER_AVAILABLE == TRUE
                 species = RandomizeTrainerMon(trainer->trainerClass, i, monsCount, species);
                 #endif
-                CreateMon(&party[i], species, partyData[monIndex].lvl, personalityValue, otId);
+                if (scaledAceLevel != 0)
+                    species = EvolveSpeciesForLevel(species, level);
+                CreateMon(&party[i], species, level, personalityValue, otId);
             }
             SetMonData(&party[i], MON_DATA_HELD_ITEM, &partyData[monIndex].heldItem);
 
@@ -2226,7 +2243,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
             }
         }
 
-        if (gSaveBlock3Ptr->challengeSettings.tx_Challenges_TrainerScalingIVs)
+        if (gSaveBlock3Ptr->challengeSettings.tx_Challenges_TrainerScalingIVs && !IsRedsPathBattle())
         {
             u8 iv = GetCurrentTrainerIVs();
             for (i = 0; i < monsCount; i++)
@@ -2237,7 +2254,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
             }
         }
 
-        if (gSaveBlock3Ptr->challengeSettings.tx_Challenges_TrainerScalingEVs)
+        if (gSaveBlock3Ptr->challengeSettings.tx_Challenges_TrainerScalingEVs && !IsRedsPathBattle())
         {
             u8 ev = GetCurrentTrainerEVs();
             for (i = 0; i < monsCount; i++)
@@ -2260,6 +2277,11 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
     return trainer->partySize;
 }
 
+u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer *trainer, bool32 firstTrainer, u32 battleTypeFlags)
+{
+    return CreateNPCTrainerPartyFromTrainerWithId(party, trainer, TRAINER_NONE, firstTrainer, battleTypeFlags);
+}
+
 static u8 CreateNPCTrainerParty(struct Pokemon *party, u16 trainerNum, bool8 firstTrainer)
 {
     u8 retVal;
@@ -2277,11 +2299,11 @@ static u8 CreateNPCTrainerParty(struct Pokemon *party, u16 trainerNum, bool8 fir
         if (tempTrainer.partySize == 0)
             tempTrainer.partySize = origTrainer->partySize;
 
-        retVal = CreateNPCTrainerPartyFromTrainer(party, (const struct Trainer *)(&tempTrainer), firstTrainer, gBattleTypeFlags);
+        retVal = CreateNPCTrainerPartyFromTrainerWithId(party, (const struct Trainer *)(&tempTrainer), trainerNum, firstTrainer, gBattleTypeFlags);
     }
     else
     {
-        retVal = CreateNPCTrainerPartyFromTrainer(party, GetTrainerStructFromId(trainerNum), firstTrainer, gBattleTypeFlags);
+        retVal = CreateNPCTrainerPartyFromTrainerWithId(party, GetTrainerStructFromId(trainerNum), trainerNum, firstTrainer, gBattleTypeFlags);
     }
     return retVal;
 }
@@ -5916,6 +5938,7 @@ static void HandleEndTurn_FinishBattle(void)
 
         if (gSaveBlock3Ptr->challengeSettings.tx_Challenges_Mirror
          && !gSaveBlock3Ptr->challengeSettings.tx_Challenges_Mirror_Thief
+         && !IsRedsPathBattle()
          && (gBattleTypeFlags & (BATTLE_TYPE_TRAINER | BATTLE_TYPE_DOUBLE)))
         {
             for (u32 j = 0; j < PARTY_SIZE; j++)
@@ -5987,7 +6010,10 @@ static void HandleEndTurn_FinishBattle(void)
             TryPutBreakingNewsOnAir();
         }
 
-        if (IsNuzlockeEasyActive())
+        // Red's Path lends the player Red's team (SavePlayerParty before,
+        // LoadPlayerParty after, like the Bug Contest): a faint there is not
+        // a death, and the cemetery option would put Red's Pokemon in the PC.
+        if (IsNuzlockeEasyActive() && !IsRedsPathBattle())
         {
             if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK
                                         | BATTLE_TYPE_LINK_IN_BATTLE
@@ -6010,7 +6036,8 @@ static void HandleEndTurn_FinishBattle(void)
                                         | BATTLE_TYPE_TOWER_LINK_MULTI
                                         | BATTLE_TYPE_RECORDED_LINK
                                         | BATTLE_TYPE_FRONTIER
-                                        | BATTLE_TYPE_TRAINER_HILL)))
+                                        | BATTLE_TYPE_TRAINER_HILL))
+             && !IsRedsPathBattle())
                 NuzlockeDeleteFaintedPartyPokemon();
             if (!(gBattleTypeFlags & (BATTLE_TYPE_DOUBLE
                                         | BATTLE_TYPE_LINK
@@ -6126,7 +6153,9 @@ static void TryEvolvePokemon(void)
 {
     s32 i;
 
-    for (i = 0; i < PARTY_SIZE; i++)
+    // Red's team is thrown away right after the battle, and an evolution scene
+    // would still mark the new species caught in the player's Pokedex.
+    for (i = IsRedsPathBattle() ? PARTY_SIZE : 0; i < PARTY_SIZE; i++)
     {
         if (!(sTriedEvolving & (1u << i)))
         {
@@ -6591,6 +6620,10 @@ bool32 CanPlayerForfeitNormalTrainerBattle(void)
         return FALSE;
 
     if (gBattleTypeFlags & BATTLE_TYPE_RECORDED_INVALID)
+        return FALSE;
+
+    // Red's Path is won or lost, never walked away from.
+    if (IsRedsPathBattle())
         return FALSE;
 
     return (gBattleTypeFlags & BATTLE_TYPE_TRAINER);

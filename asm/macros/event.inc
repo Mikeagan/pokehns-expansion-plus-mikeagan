@@ -2907,6 +2907,32 @@
 	.byte \status
 	.endm
 
+	@ Makes the player and specified (localId) object face one another.
+	.macro facetogether localIdOne=LOCALID_PLAYER, localIdTwo=VAR_LAST_TALKED
+	callnative ScriptFaceEachOther, requests_effects=1
+	.2byte \localIdOne
+	.2byte \localIdTwo
+	.endm
+
+	@ Saves the species of a specified (localId) object, or SPECIES_NONE if one is not found. 
+	.macro getoverworldwildencounterspecies var:req, localId=VAR_LAST_TALKED
+	callnative SetOverworldObjectSpecies, requests_effects=1
+	.2byte \var
+	.2byte \localId
+	.endm
+
+	@ Starts an Overworld Wild Encounter with a specified (localId) object, if possible.
+	.macro tryoverworldwildencounter localId=VAR_LAST_TALKED
+	callnative StartWildBattleWithOWE, requests_effects=1
+	.2byte \localId
+	.endm
+
+	@ Start a scripted approach for a specified (localId) overworld wild encounter towards the player.
+	.macro overworldwildencounterapproach localId=VAR_LAST_TALKED
+	callnative OWEApproachForBattle, requests_effects=1
+	.2byte \localId
+	.endm
+
 @ FRLG
 
 
@@ -2971,6 +2997,15 @@
 	.macro checkpartymove move:req
 	.byte SCR_OP_CHECKPARTYMOVE
 	.2byte \move
+	.endm
+
+	@ Quest book (include/constants/quests.h): reads or sets a quest's state
+	@ with action = QUEST_LOG_*. Queries write VAR_RESULT. quest and arg may be vars.
+	.macro questlog action:req, quest:req, arg=0
+	.byte SCR_OP_QUESTLOG
+	.byte \action
+	.2byte \quest
+	.2byte \arg
 	.endm
 
 	@ Shows the message box containing the help window and its header and description.

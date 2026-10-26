@@ -1,4 +1,5 @@
 #include "global.h"
+#include "battle_partner.h"
 #include "bg.h"
 #include "event_data.h"
 #include "gpu_regs.h"
@@ -69,7 +70,6 @@ enum {
     ITEM_FEATURES_SHINY_COLOR,
     ITEM_FEATURES_ITEM_DROP,
     ITEM_FEATURES_FRONTIER_BANS,
-    ITEM_FEATURES_TRAINER_CATCH,
     ITEM_FEATURES_NEXT,
     ITEM_FEATURES_COUNT,
 };
@@ -650,10 +650,6 @@ static const u8 *const sDesc_FrontierBans[] = {
     COMPOUND_STRING("Powerful legendary {PKMN} are banned\nin the BATTLE FRONTIER. Default."),
     COMPOUND_STRING("All legendaries are allowed to\nparticipate in the BATTLE FRONTIER."),
 };
-static const u8 *const sDesc_TrainerCatch[] = {
-    COMPOUND_STRING("Trainers block every Poké Ball\nthrown at their {PKMN}. Default."),
-    COMPOUND_STRING("Catch a Trainer's {PKMN}! The battle\nends, but they will still fight you."),
-};
 static const u8 *const sDesc_ShinyColor[] = {
     COMPOUND_STRING("Original shiny color palette for\nall {PKMN}. Default."),
     COMPOUND_STRING("Some shiny {PKMN} have brand new\ncolor palettes."),
@@ -692,12 +688,6 @@ static const struct ChallengeMenuItem sTabItems_Features[] = {
         .descriptions = sDesc_FrontierBans,
         .numChoices   = 2,
         .choiceNames  = sChoices_BanUnban,
-    },
-    [ITEM_FEATURES_TRAINER_CATCH] = {
-        .name         = COMPOUND_STRING("TRAINER CATCH"),
-        .descriptions = sDesc_TrainerCatch,
-        .numChoices   = 2,
-        .choiceNames  = sChoices_OffOn,
     },
     [ITEM_FEATURES_NEXT] = {
         .name         = COMPOUND_STRING("NEXT"),
@@ -1990,7 +1980,6 @@ static void Task_ConfirmSaveYes(u8 taskId)
     cs->tx_Features_WildMonDropItems = *GetSelectionPtr(TAB_FEATURES, ITEM_FEATURES_ITEM_DROP);
     cs->tx_Features_FrontierBans   = *GetSelectionPtr(TAB_FEATURES, ITEM_FEATURES_FRONTIER_BANS);
     cs->tx_Features_ShinyColors    = *GetSelectionPtr(TAB_FEATURES, ITEM_FEATURES_SHINY_COLOR);
-    cs->trainerCatch               = *GetSelectionPtr(TAB_FEATURES, ITEM_FEATURES_TRAINER_CATCH);
 
     // Randomizer tab — if master toggle is OFF, clear all sub-fields
     if (*GetSelectionPtr(TAB_RANDOMIZER, ITEM_RANDOM_OFF_ON) == 0)
@@ -2231,7 +2220,6 @@ void CB2_InitChallengeMenu(void)
             *GetSelectionPtr(TAB_FEATURES, ITEM_FEATURES_ITEM_DROP)    = cs->tx_Features_WildMonDropItems;
             *GetSelectionPtr(TAB_FEATURES, ITEM_FEATURES_FRONTIER_BANS)= cs->tx_Features_FrontierBans;
             *GetSelectionPtr(TAB_FEATURES, ITEM_FEATURES_SHINY_COLOR)  = cs->tx_Features_ShinyColors;
-            *GetSelectionPtr(TAB_FEATURES, ITEM_FEATURES_TRAINER_CATCH)= cs->trainerCatch;
 
             // Randomizer tab — derive master toggle from whether any sub-field is active
             *GetSelectionPtr(TAB_RANDOMIZER, ITEM_RANDOM_OFF_ON) =
@@ -2374,6 +2362,8 @@ u32 GetBaseStatEqualizerValue(void)
 {
     static const u16 sEqualizerValues[] = {0, 100, 255, 500};
     u8 setting = gSaveBlock3Ptr->challengeSettings.tx_Challenges_BaseStatEqualizer;
+    if (IsRedsPathBattle())
+        return 0;
     if (setting >= ARRAY_COUNT(sEqualizerValues))
         return 0;
     return sEqualizerValues[setting];

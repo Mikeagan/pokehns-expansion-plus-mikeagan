@@ -1,4 +1,5 @@
 #include "global.h"
+#include "battle_partner.h"
 #include "overworld.h"
 #include "constants/heal_locations.h"
 #include "battle_pyramid.h"
@@ -54,6 +55,7 @@
 #include "roamer.h"
 #include "rotating_gate.h"
 #include "rtc.h"
+#include "option_menu.h"
 #include "safari_zone.h"
 #include "save.h"
 #include "save_location.h"
@@ -71,6 +73,7 @@
 #include "tv.h"
 #include "scanline_effect.h"
 #include "wild_encounter.h"
+#include "wild_encounter_ow.h"
 #include "vs_seeker.h"
 #include "frontier_util.h"
 #include "constants/abilities.h"
@@ -394,7 +397,7 @@ static void (*const sMovementStatusHandler[])(struct LinkPlayerObjectEvent *, st
 // code
 void DoWhiteOut(void)
 {
-    if (IsNuzlockeActive() || IsNuzlockeEasyActive())
+    if ((IsNuzlockeActive() || IsNuzlockeEasyActive()) && !IsRedsPathBattle())
     {
         if (GetFirstAliveBoxPokemon() == IN_BOX_COUNT * TOTAL_BOXES_COUNT)
         {
@@ -476,6 +479,9 @@ void Overworld_ResetBattleFlagsAndVars(void)
     FlagClear(B_FLAG_DYNAMAX_BATTLE);
     FlagClear(B_FLAG_SKY_BATTLE);
     FlagClear(B_FLAG_NO_WHITEOUT);
+#if IS_HNS
+    FlagClear(FLAG_REDS_PATH_BATTLE);
+#endif
 }
 #endif
 
@@ -964,6 +970,7 @@ void LoadMapFromCameraTransition(u8 mapGroup, u8 mapNum)
          || gMapHeader.regionMapSectionId != sLastMapSectionId)
             ShowMapNamePopup();
     }
+    SetMinimumOWESpawnTimer();
 }
 
 static void LoadMapFromWarp(bool32 a1)
@@ -1024,6 +1031,7 @@ static void LoadMapFromWarp(bool32 a1)
         UpdateTVScreensOnMap(gBackupMapLayout.width, gBackupMapLayout.height);
         InitSecretBaseAppearance(TRUE);
     }
+    SetMinimumOWESpawnTimer();
 }
 
 void ResetInitialPlayerAvatarState(void)
@@ -1273,6 +1281,24 @@ static bool16 IsRocketTakeover(struct WarpData *warp)
     return FALSE;
 }
 
+// The three Pokemon Center themes (Emerald, FRLG, HGSS) become the DPPt night
+// theme after dark. Every caller (map entry, warp, returning from a battle)
+// goes through GetLocationMusic, so the hour is only read when the music is
+// chosen: it does not change if night falls while the player is inside.
+static u16 ApplyNightCenterMusic(u16 music)
+{
+    switch (music)
+    {
+    case MUS_POKE_CENTER:
+    case MUS_RG_POKE_CENTER:
+    case MUS_HG_POKE_CENTER:
+        if (IsNightCenterMusicEnabled() && GetTimeOfDay() == TIME_NIGHT)
+            return MUS_DP_POKE_CENTER_NIGHT;
+        break;
+    }
+    return music;
+}
+
 u16 GetLocationMusic(struct WarpData *warp)
 {
     if (IsRocketTakeover(warp) == TRUE)
@@ -1286,7 +1312,7 @@ u16 GetLocationMusic(struct WarpData *warp)
     else if (IsInfiltratedWeatherInstitute(warp) == TRUE)
         return MUS_MT_CHIMNEY;
     else
-        return Overworld_GetMapHeaderByGroupAndId(warp->mapGroup, warp->mapNum)->music;
+        return ApplyNightCenterMusic(Overworld_GetMapHeaderByGroupAndId(warp->mapGroup, warp->mapNum)->music);
 }
 
 u16 GetCurrLocationDefaultMusic(void)
@@ -1463,8 +1489,28 @@ void Overworld_FadeOutMapMusic(void)
     FadeOutMapMusic(4);
 }
 
+static bool32 ShouldPlayVanillaAmbientCry(void)
+{
+    switch (OW_AMBIENT_CRIES)
+    {
+    case OW_AMBIENT_CRIES_VANILLA:
+        return TRUE;
+    case OW_AMBIENT_CRIES_OWE_PRIORITY:
+        return !TryPlayAmbientCryOWE();
+    case OW_AMBIENT_CRIES_OWE_ONLY:
+        TryPlayAmbientCryOWE();
+        return FALSE;
+    case OW_AMBIENT_CRIES_NONE:
+    default:
+        return FALSE;
+    }
+}
+
 static void PlayAmbientCry(void)
 {
+    if (!ShouldPlayVanillaAmbientCry())
+        return;
+    
     s16 x, y;
     s8 pan;
     s8 volume;
@@ -1911,6 +1957,7 @@ static void OverworldBasic(void)
             ApplyWeatherColorMapIfIdle(gWeatherPtr->colorMapIndex);
         }
     }
+    UpdateOverworldWildEncounter();
 }
 
 // This CB2 is used when starting
@@ -2058,7 +2105,9 @@ void CB2_WhiteOut(void)
     {
         FieldClearVBlankHBlankCallbacks();
         StopMapMusic();
-        if (gSaveBlock3Ptr->challengeSettings.tx_Challenges_NuzlockeHardcore && !FlagGet(FLAG_END_NUZLOCKE))
+        // Losing Red's Path loses with Red's team, not the player's.
+        if (gSaveBlock3Ptr->challengeSettings.tx_Challenges_NuzlockeHardcore && !FlagGet(FLAG_END_NUZLOCKE)
+         && !IsRedsPathBattle())
         {
             ClearSaveData();
             DoSoftReset();
