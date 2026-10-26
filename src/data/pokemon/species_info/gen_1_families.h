@@ -18853,12 +18853,15 @@ const struct SpeciesInfo gSpeciesInfoGen1[] =
                                 // has room for the first two repeats. The map sections never
                                 // overlap, so this order picks no different evolution.
                                 {EVO_ITEM, ITEM_LEAF_STONE, SPECIES_LEAFEON},
+								{EVO_ITEM, ITEM_ICE_STONE, SPECIES_GLACEON},
+								//JOHTO LOCATIONS
                                 {EVO_LEVEL, 0, SPECIES_LEAFEON, CONDITIONS({IF_IN_MAPSEC, MAPSEC_ILEX_FOREST})},
-                                {EVO_ITEM, ITEM_ICE_STONE, SPECIES_GLACEON},
                                 {EVO_LEVEL, 0, SPECIES_GLACEON, CONDITIONS({IF_IN_MAPSEC, MAPSEC_ICE_PATH})},
+								//KANTO LOCATIONS
                                 {EVO_LEVEL, 0, SPECIES_LEAFEON, CONDITIONS({IF_IN_MAPSEC, MAPSEC_VIRIDIAN_FOREST})},
                                 {EVO_LEVEL, 0, SPECIES_GLACEON, CONDITIONS({IF_IN_MAPSEC, MAPSEC_SEAFOAM_ISLANDS})},
                               #else
+								//SINOH LOCATIONS
                                 {EVO_LEVEL, 0, SPECIES_LEAFEON, CONDITIONS({IF_IN_MAP, MAP_PETALBURG_WOODS})},
                                 {EVO_LEVEL, 0, SPECIES_GLACEON, CONDITIONS({IF_IN_MAP, MAP_SHOAL_CAVE_LOW_TIDE_ICE_ROOM})},
                               #endif
@@ -18869,7 +18872,10 @@ const struct SpeciesInfo gSpeciesInfoGen1[] =
                             #endif
                             #if P_GEN_2_CROSS_EVOS
                                 {EVO_LEVEL, 0, SPECIES_ESPEON, CONDITIONS({IF_MIN_FRIENDSHIP, FRIENDSHIP_EVO_THRESHOLD}, {IF_NOT_TIME, TIME_NIGHT})},
-                                {EVO_LEVEL, 0, SPECIES_UMBREON, CONDITIONS({IF_MIN_FRIENDSHIP, FRIENDSHIP_EVO_THRESHOLD}, {IF_TIME, TIME_NIGHT})}
+                                {EVO_LEVEL, 0, SPECIES_UMBREON, CONDITIONS({IF_MIN_FRIENDSHIP, FRIENDSHIP_EVO_THRESHOLD}, {IF_TIME, TIME_NIGHT})},
+								//STONE ADDITIONS
+								{EVO_ITEM, ITEM_SUN_STONE, SPECIES_ESPEON},
+								{EVO_ITEM, ITEM_MOON_STONE, SPECIES_UMBREON}
                             #endif
                             ),
     },

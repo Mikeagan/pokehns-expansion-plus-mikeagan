@@ -17,7 +17,7 @@ each glyph overlaps the previous one by one column; a pixel keeps the
 strongest of the two (colour > black outline > transparent).
 
 v, 0, 1, 2, 6, '.', P, L, U, S are copied from the hand-made strip of
-v2.0.6.PLUS.1; 3, 4, 5, 7, 8, 9 were drawn in the same scheme.
+v2.0.6.PLUS.1; 3, 4, 5, 7, 8, 9, M were drawn in the same scheme.
 """
 import sys
 
@@ -135,6 +135,13 @@ GLYPHS = {
           '111111331',
           '133333331',
           '111111111'],
+    'M': ['1111...1111',
+          '15551.15551',
+          '15555155551',
+          '14414441441',
+          '13311311331',
+          '1331.1.1331',
+          '1111...1111'],
 }
 
 STRIP_W = 160

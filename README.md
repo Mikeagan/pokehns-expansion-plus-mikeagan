@@ -1,4 +1,22 @@
 <p align="center"><img src="HnS_Plus_Logo.png" alt="Pokémon Heart &amp; Soul +" width="640"></p>
+# About `pokemonHnS-expansion-plus-mikeagan` Changes
+
+This repository is a personal fork of **`pokemonHnS-expansion-plus`** that adds my 
+own personal changes/additions to the plus fork.
+
+ITEM PRICE CHANGES (EVO STONES MATCH HG&SS).  
+ADD ITEMS TO MARTS (after 8 BADGES).  
+ADD ITEMS TO (GOLDENROD & VITAMIN GURU) MARTS.  
+POKEMON CAN MAX ALL EVs.  
+ELM GIVES 5 MASTER BALLS (instead of 1).  
+ADD MORE ODD EGGS  (MANTYKE, BONSLY, HAPPINY, MIME_JR, CHIKORITA, CYNDAQUIL, TOTODILE, EEVEE).  
+ADD PASSWORDS FOR NEW ODD EGGS WITH INFO ADDED TO BOOK SHELVES.  
+YOU CAN GET ALL THE ODD EGGS YOU WANT (MUST GET A DIFFERENT ONE EACH TIME).  
+ADD INFINITE RARE CANDY OPTION OUTSIDE OF NUZLOCK.  
+---FIX EEVEE POKEDEX (ADD SUN & MOON STONE FOR ESPEON & UMBREON).  
+	Now you can see a method to get all of them. The original HNS methods still work, but don't show.  
+CHANGED VERSION ON TITLE SCREEN -> v2.0.6.+.M
+
 
 # `pokehns-expansion-plus`
 

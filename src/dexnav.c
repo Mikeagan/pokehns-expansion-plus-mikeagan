@@ -1467,7 +1467,7 @@ static u8 DexNavTryGenerateMonLevel(u16 species, enum EncounterType environment)
     levelBase = GetWildScaledLevel(levelBase);
 
     if (Random() % 100 < 4)
-        levelBonus += 10; //4% chance of having a +10 level
+        levelBonus += 2; //4% chance of having a +10 level -> +2
 
     if (levelBase + levelBonus > MAX_LEVEL)
         return MAX_LEVEL;
