@@ -1,8 +1,11 @@
 //--------------------------------------------------------------
-//VERSION 2.0.6.M
+//VERSION 2.0.6.PLUS.7.M
 //--------------------------------------------------------------
 C:\Users\micha\OneDrive\Desktop\gba-decomps\pokehns-expansion-mikeagan\graphics\title_screen\hns\press_start.png
 //ADD MY CURRENT VERSION NUMBER
+//RUN COMMAND TO CHANGE VERSION IN GAME
+make hns -j$(nproc) -O HNS_VERSION="2.0.6.PLUS.7.M"
+
 //--------------------------------------------------------------
 //ITEM PRICE CHANGES (EVO STONES MATCH HG&SS)
 //--------------------------------------------------------------
