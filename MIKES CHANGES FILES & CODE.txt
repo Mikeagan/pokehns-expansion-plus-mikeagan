@@ -601,7 +601,7 @@ C:\Users\micha\OneDrive\Desktop\gba-decomps\pokehns-expansion-mikeagan\src\data\
 //INCREASE FLASH RADIUS
 //--------------------------------------------------------------
 C:\Users\micha\OneDrive\Desktop\gba-decomps\pokehns-expansion-plus-mikeagan\src\field_screen_effect.c
-static const u16 sFlashLevelToRadius[] = { 200, 80, 64, 56, 48, 40, 32, 24, 0 };  //72->80
+static const u16 sFlashLevelToRadius[] = { 200, 120, 64, 56, 48, 40, 32, 24, 0 };  //72->120
 
 //--------------------------------------------------------------
 //DEXNAV BONUS STRONGER POKEMON ONLY +2

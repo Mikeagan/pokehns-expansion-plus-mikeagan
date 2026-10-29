@@ -460,6 +460,25 @@ static bool32 IsRedsPathChallengeDone(u32 subquest)
     return RedsPath_IsChallengeWon(subquest);
 }
 
+// ---- SINJOH PLATES ----
+//
+// Hidden until the ITEM_AZURE_FLUTE has been found 
+//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Throwaway quests for looking at the screen; see QUEST_BOOK_TEST_QUESTS.
 // Their data comes first because the table points at it.
 #if QUEST_BOOK_TEST_QUESTS

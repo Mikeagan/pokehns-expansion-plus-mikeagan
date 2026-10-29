@@ -1,0 +1,133 @@
+//Work in Progress add to: C:\Users\micha\OneDrive\Desktop\gba-decomps\pokehns-expansion-plus-mikeagan\src\data\quests.h
+
+// ---- SINJOH PLATES ----
+//
+// Hidden until the ITEM_AZURE_FLUTE has been found 
+//
+
+static const u8 sText_Found[] = _("Found");
+static const u8 sText_Done[] = _("Done");
+static const u8 sText_SinjohDone[] = _("All PLATES are found.\n Go face Arceus!");
+
+static const u8 sText_SinjohStep0[] = _("Find FIST PLATE\nSnowswept Cavern: Defeat Machamp.");
+static const u8 sText_SinjohStep1[] = _("Talk to Steven\nSinjoh Ruins");
+static const u8 sText_SinjohStep2[] = _("Find TOXIC PLATE\nSnowswept Cavern W.");
+static const u8 sText_SinjohStep3[] = _("Find SKY PLATE\nRoute 49: N Skier.");
+static const u8 sText_SinjohStep4[] = _("Find MIND PLATE\nRoute 49: NE.");
+static const u8 sText_SinjohStep5[] = _("Find DREAD PLATE\nRoute 49: S Waterfall.");
+static const u8 sText_SinjohStep6[] = _("Find SPLASH PLATE\nNew Sinjoh: Hot Springs E.");
+static const u8 sText_SinjohStep7[] = _("Find FLAME PLATE\nNew Sinjoh: Hot Springs NW.");
+static const u8 sText_SinjohStep8[] = _("Find EARTH PLATE\nNew Sinjoh: Hot Springs S.");
+static const u8 sText_SinjohStep9[] = _("Find SPOOKY PLATE\nNew Sinjoh: Haunted Room.");
+static const u8 sText_SinjohStep10[] = _("Find MEADOW PLATE\nNew Sinjoh: KIMONO GIRL.");
+static const u8 sText_SinjohStep11[] = _("Find ICICLE PLATE\nNew Sinjoh: KIMONO GIRL.");
+static const u8 sText_SinjohStep12[] = _("Find PIXIE PLATE\nNew Sinjoh: KIMONO GIRL.");
+static const u8 sText_SinjohStep13[] = _("Find DRACO PLATE\nRoute 50: E.");
+static const u8 sText_SinjohStep14[] = _("Find INSECT PLATE\nRoute 50: NE.");
+static const u8 sText_SinjohStep15[] = _("Find IRON PLATE\nRoute 50: NW.");
+static const u8 sText_SinjohStep16[] = _("Find ZAP PLATE\nRoute 50: W.");
+static const u8 sText_SinjohStep17[] = _("Steven: Find STONE PLATE\nSinjoh Ruins");
+
+static const u8 sText_SnowsweptCavern[] = _("Snowswept Cavern");
+static const u8 sText_Route49[] = _("Route 49");
+static const u8 sText_NewSinjoh[] = _("New Sinjoh");
+static const u8 sText_HotSprings[] = _("New Sinjoh: Hot Springs Cave");
+static const u8 sText_Route50[] = _("Route 50");
+static const u8 sText_SinjohRuins[] = _("Sinjoh Ruins");
+
+static const struct QuestStep sSinjohDone = { sText_SinjohDone, sText_SinjohRuins, gObjectEventPic_ArceusNormal, QUEST_SPRITE_OBJECT }; //gObjectEventPic_ArceusNormal
+
+static const struct QuestStep sSinjohSteps[] =
+{
+    { sText_SinjohStep0, sText_SnowsweptCavern, OBJ_EVENT_GFX_ITEM_BALL,   QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep1, sText_SinjohRuins,     OBJ_EVENT_GFX_STEVEN_HNS,  QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep2, sText_SnowsweptCavern, OBJ_EVENT_GFX_ITEM_BALL,   QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep3, sText_Route49,         OBJ_EVENT_GFX_SKIER_F_HNS, QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep4, sText_Route49,         OBJ_EVENT_GFX_ITEM_BALL,   QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep5, sText_Route49,         OBJ_EVENT_GFX_ITEM_BALL,   QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep6, sText_HotSprings,      OBJ_EVENT_GFX_SWIMMER_F,   QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep7, sText_HotSprings,      OBJ_EVENT_GFX_ITEM_BALL,   QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep8, sText_HotSprings,      OBJ_EVENT_GFX_ITEM_BALL,   QUEST_SPRITE_OBJECT },
+	{ sText_SinjohStep9, sText_NewSinjoh,       OBJ_EVENT_GFX_ITEM_BALL,   QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep10, sText_NewSinjoh,      OBJ_EVENT_GFX_KIMONO_HNS,  QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep11, sText_NewSinjoh,      OBJ_EVENT_GFX_KIMONO_HNS,  QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep12, sText_NewSinjoh,      OBJ_EVENT_GFX_KIMONO_HNS,  QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep13, sText_Route50,        OBJ_EVENT_GFX_OLD_MAN_HNS, QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep14, sText_Route50,        OBJ_EVENT_GFX_ITEM_BALL,   QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep15, sText_Route50,        OBJ_EVENT_GFX_ITEM_BALL,   QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep16, sText_Route50,        OBJ_EVENT_GFX_ITEM_BALL,   QUEST_SPRITE_OBJECT },
+    { sText_SinjohStep17, sText_SinjohRuins,    OBJ_EVENT_GFX_STEVEN_HNS,  QUEST_SPRITE_OBJECT },
+};
+
+
+
+
+
+
+
+static const u16 sSinjohFlags[] =
+{
+    FLAG_GOT_FIST_PLATE, 
+};
+
+static const u8 sText_JohtoBadge0[] = _("Zephyr Badge");
+static const u8 sText_JohtoBadge1[] = _("Hive Badge");
+static const u8 sText_JohtoBadge2[] = _("Plain Badge");
+static const u8 sText_JohtoBadge3[] = _("Fog Badge");
+static const u8 sText_JohtoBadge4[] = _("Storm Badge");
+static const u8 sText_JohtoBadge5[] = _("Mineral Badge");
+static const u8 sText_JohtoBadge6[] = _("Glacier Badge");
+static const u8 sText_JohtoBadge7[] = _("Rising Badge");
+static const u8 sText_JohtoBadgeDesc0[] = _("Falkner's Flying-type Gym.");
+static const u8 sText_JohtoBadgeDesc1[] = _("Bugsy's Bug-type Gym.");
+static const u8 sText_JohtoBadgeDesc2[] = _("Whitney's Normal-type Gym.");
+static const u8 sText_JohtoBadgeDesc3[] = _("Morty's Ghost-type Gym.");
+static const u8 sText_JohtoBadgeDesc4[] = _("Chuck's Fighting-type Gym.");
+static const u8 sText_JohtoBadgeDesc5[] = _("Jasmine's Steel-type Gym.");
+static const u8 sText_JohtoBadgeDesc6[] = _("Pryce's Ice-type Gym.");
+static const u8 sText_JohtoBadgeDesc7[] = _("Clair's Dragon-type Gym.");
+
+static const struct QuestSubquestInfo sJohtoSubquests[] =
+{
+    { sText_JohtoBadge0, sText_JohtoBadgeDesc0, sText_Violet,     OBJ_EVENT_GFX_FALKNER_HNS, QUEST_SPRITE_OBJECT, sText_Won },
+    { sText_JohtoBadge1, sText_JohtoBadgeDesc1, sText_Azalea,     OBJ_EVENT_GFX_BUGSY_HNS,   QUEST_SPRITE_OBJECT, sText_Won },
+    { sText_JohtoBadge2, sText_JohtoBadgeDesc2, sText_Goldenrod,  OBJ_EVENT_GFX_WHITNEY_HNS, QUEST_SPRITE_OBJECT, sText_Won },
+    { sText_JohtoBadge3, sText_JohtoBadgeDesc3, sText_Ecruteak,   OBJ_EVENT_GFX_MORTY_HNS,   QUEST_SPRITE_OBJECT, sText_Won },
+    { sText_JohtoBadge4, sText_JohtoBadgeDesc4, sText_Cianwood,   OBJ_EVENT_GFX_CHUCK_HNS,   QUEST_SPRITE_OBJECT, sText_Won },
+    { sText_JohtoBadge5, sText_JohtoBadgeDesc5, sText_Olivine,    OBJ_EVENT_GFX_JASMINE_HNS, QUEST_SPRITE_OBJECT, sText_Won },
+    { sText_JohtoBadge6, sText_JohtoBadgeDesc6, sText_Mahogany,   OBJ_EVENT_GFX_PRYCE_HNS,   QUEST_SPRITE_OBJECT, sText_Won },
+    { sText_JohtoBadge7, sText_JohtoBadgeDesc7, sText_Blackthorn, OBJ_EVENT_GFX_CLAIR_HNS,   QUEST_SPRITE_OBJECT, sText_Won },
+};
+
+// The first Gym of the list without its badge, count if every one is won.
+static u32 FirstMissingBadge(const u16 *flags, u32 count)
+{
+    u32 i;
+
+    for (i = 0; i < count; i++)
+    {
+        if (!FlagGet(flags[i]))
+            break;
+    }
+    return i;
+}
+
+static void GetJohtoProgress(struct QuestProgress *progress)
+{
+    u32 next = FirstMissingBadge(sJohtoBadgeFlags, NELEMS(sJohtoBadgeFlags));
+
+    if (next == NELEMS(sJohtoBadgeFlags))
+    {
+        progress->state = QUEST_STATE_COMPLETED;
+        return;
+    }
+    progress->state = QUEST_STATE_ACTIVE;
+    progress->step = next;
+    if (next == JOHTO_STEP_CLAIR_GYM && FlagGet(FLAG_DEFEATED_BLACKTHORN_GYM))
+        progress->step = JOHTO_STEP_CLAIR_DEN;
+}
+
+static bool32 IsJohtoBadgeDone(u32 subquest)
+{
+    return subquest < NELEMS(sJohtoBadgeFlags) && FlagGet(sJohtoBadgeFlags[subquest]);
+}
