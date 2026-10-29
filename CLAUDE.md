@@ -174,6 +174,12 @@ Ognuna è costata ore; il racconto completo sta nella regola indicata.
   tarati su questo repo.
 - Una schermata che non installa il suo `SetVBlankCallback` eredita quello del
   chiamante.
+- **`LoadPalette` a schermo nero lo riaccende**: scrive anche il buffer
+  sfumato, quindi quei colori tornano pieni finché qualcuno non risfuma. Mai
+  caricare palette fra una dissolvenza al nero e la schermata dopo
+  (`strip_menu.md`: un fotogramma di tile colorate aprendo il quest book).
+  Un lampo di un fotogramma si cattura con 40 `import` di fila subito dopo il
+  tasto, confrontando la luminosità media.
 - **`make hns` non è una build RELEASE: un `assertf` che fallisce mostra al
   giocatore una schermata blu.** Va bene solo per errori di programma, mai per
   stati che il gioco raggiunge (VRAM piena, tabella oggetti piena)
@@ -210,6 +216,12 @@ In `.claude/rules/`, caricate da sole quando apri i file indicati.
 | `quest_book.md` | quest book: schermata, testi, immagini, missioni di prova |
 | `strip_menu.md` | menu di pausa a striscia: quando c'è, tasti, salvataggio, VRAM, Flash |
 | `reds_path.md` | Red's Path: capi, squadre di Red, agganci di lotta, aiutanti, scena e premi nelle palestre |
+
+**Skill del repo** (`.claude/skills/`, si chiamano con `/<nome>`):
+`upstream-sync`, `next-phase` (prossima fase di un piano, e se serve il
+`.srm`), `new-plan` (piano a fasi con modello per fase), `add-quest`,
+`doc-sync` (documentazione in pari con l'ultimo commit), `new-issue`,
+`pr-review` (review di una PR pronta, con i controlli di questo repo).
 
 Fuori dalle regole, da leggere quando serve: `docs/claude/emulator.md`,
 `docs/SOULGOLD_PORT_REPORT.md`. I piani in `docs/plans/` contengono le
