@@ -1,7 +1,11 @@
 ---
 paths:
-  - "src/battle_*.c"
-  - "include/battle_*.h"
+  - "src/battle_interface.c"
+  - "src/battle_bg.c"
+  - "src/battle_gfx_sfx_util.c"
+  - "src/battle_controller_player.c"
+  - "src/battle_message.c"
+  - "include/battle_interface.h"
   - "src/type_icons.c"
   - "include/type_icons.h"
   - "graphics/battle_interface/**"
@@ -9,7 +13,9 @@ paths:
   - "graphics/text_window/**"
 ---
 
-# UI di lotta: palette, tema scuro, icone dei tipi
+# UI di lotta: palette, tema scuro in lotta, icone dei tipi
+
+Tema scuro fuori dalla lotta: `dark_ui.md`. Racconto delle misure: `docs/claude/battle-ui-history.md`.
 
 ## Una entry, due significati (esempi della regola del §2 di CLAUDE.md)
 
@@ -53,74 +59,31 @@ scavalcano il colore scelto da `BattlePutTextOnWindow`. In Soulgold quelle strin
 sono testo puro. Se una finestra resta chiara pur essendo nella lista di
 `IsDarkBattleCommandWindow`, guarda prima la stringa.
 
+
 ## Icone dei tipi in lotta
 
-- **Icone dei tipi in lotta**: `src/type_icons.c` c'è, `B_SHOW_TYPES` era
-  `SHOW_TYPES_NEVER`.
+`src/type_icons.c` c'era, con `B_SHOW_TYPES` su `SHOW_TYPES_NEVER`. Una feature
+sempre spenta ha dati posizionali di default di expansion (`sTypeIconPositions`
+era così). La healthbox ha subpriority **1**, le icone **255**: ciò che si
+sovrappone alla box finisce *dietro* e non si vede.
 
-Corollario sulle coordinate: quando una feature è sempre stata spenta, i suoi
-dati posizionali sono i default di expansion, non valori tarati su questo repo.
-`sTypeIconPositions` era così.
-
-La healthbox è creata con subpriority **1**, le icone dei tipi con **255**:
-tutto ciò che si sovrappone alla box viene disegnato *dietro* e non si vede mai.
-
-**Errore mio da non ripetere.** Dalla segnalazione «compare per un secondo e poi
-sparisce, esce e rientra dalla hpbox» avevo concluso che la posizione di partenza
-(`{20, 26}`, il default di expansion) finisse dentro la box, e avevo spostato le
-icone a **destra** della healthbox. Sbagliato: quel default mette l'icona a
-**sinistra** della box, dove c'è spazio libero, e «esce e rientra dalla hpbox»
-descriveva l'animazione che funzionava. L'unico vero bug era
-`tHideIconTimer` che non si azzerava mai. La frase dell'utente conteneva già la
-risposta: **leggere la segnalazione come una misura, non come un sintomo**.
-
-**Come si misura davvero.** `import` + `convert -sample 240x160!` dà il
-framebuffer 1:1, e `convert ... txt:-` ne stampa i pixel: da lì i bordi si leggono
-senza interpretare. In singola il bordo **sinistro** della box è una linea
-verticale a **x 12** su tutte le righe, quello destro sta a **x 101** sulla riga
-del nome. Restano quindi 12 px liberi a sinistra; lo sprite è largo 8 e la x
-memorizzata è il **centro**, quindi riposo 7 = icona su x 3..10.
-
-**Disposizione attuale:** singola a **sinistra** della box (`{17, 26}`, la slide
-toglie 10), doppia a **destra** come Soulgold (offset +66 dall'origine della box
-su entrambi i lati, identico a SG). La scaletta di 4 px della seconda icona vale
-solo dove le icone stanno a destra, quindi è attiva solo in doppia: in singola i
-12 px non bastano e 4 px in un verso o nell'altro tagliano il bordo schermo o
-nascondono mezzo glifo dietro la box.
-
-**Tre differenze di comportamento (non di coordinate) trovate rispetto a SG:**
-
-- l'arte in `graphics/types/battle_icons*.png` è **identica** a quella di SG ed è
-  **asimmetrica**. `ShouldFlipTypeIcon` di expansion sceglieva il lato giocatore
-  in singola e quello avversario in doppia — non possono essere giusti entrambi:
-  qui le icone avversarie uscivano specchiate in singola e non in doppia. SG
-  specchia sempre sul lato avversario, ma **perché SG disegna sempre a destra
-  della box**. La regola vera non è "lato avversario", è **"da che parte della
-  healthbox sta l'icona"**: qui in singola sta a sinistra, quindi il glifo
-  specchiato guardava via dalla box. Ora `ShouldFlipTypeIcon` specchia solo dove
-  si usa il layout di SG, cioè in doppia (`UseDoubleBattleCoords`); in singola
-  l'arte esce come è disegnata e guarda verso la box. Scelta estetica
-  dell'utente, non un bug di SG. Verificato per misura: il frame di un
-  Misdreavus a schermo coincide con il tile di `battle_icons1.4bpp` reso
-  offline, non con il suo specchio;
-- SG indenta di **4 px** la seconda icona di un doppio tipo sul lato avversario
-  (`SetTypeIconXY`), la scaletta in stile HGSS. Expansion le impila a filo. Qui
-  la scaletta è attiva solo in doppia, per lo spazio (vedi sopra);
-- le direzioni di `GetTypeIconSlideMovement` e `GetTypeIconHideMovement` in
-  singola sono speculari a quelle di SG, ed è corretto così: qui l'icona sta
-  dall'altro lato della box, quindi esce verso sinistra e si ritrae verso destra,
-  rientrando sotto la healthbox. Il segno del riposo è `x - 10`, per questo la
-  entry vale 17 e non 7. Il ramo doppie è identico a SG.
-
-Per farlo funzionare serve anche `tHorizontalPosition` (`data[4]`) in
-`include/type_icons.h`: la slide deve agganciarsi alla x di riposo **del singolo
-sprite**, non alla entry di tabella condivisa, altrimenti l'indent di 4 px viene
-riassorbito. Oggi `src/type_icons.c` differisce da quello di SG solo per la
-tabella delle coordinate e per il `sprite->tHideIconTimer = 0;`.
-
-Trappola di metodo, costata un'ora: avevo "verificato" che la geometria dei
-sotto-sprite fosse identica fra i due repo con
-`diff <(awk "/nome/,/^};/" a.c) <(awk "/nome/,/^};/" b.c)`. Il nome non esisteva
-in **nessuno** dei due file, quindi awk non stampava nulla da entrambe le parti e
-il diff tornava vuoto: l'ho letto come "identici". **Un diff vuoto fra due estratti
-vuoti non è una verifica.** Controlla sempre che l'estratto non sia vuoto.
+- **Leggi la segnalazione come una misura, non come un sintomo**: «esce e rientra
+  dalla hpbox» descriveva l'animazione che funzionava; l'unico bug era
+  `tHideIconTimer` mai azzerato.
+- Misura: `import` + `convert -sample 240x160!` dà il framebuffer 1:1, `txt:-`
+  stampa i pixel. In singola il bordo sinistro della box è a **x 12**, il destro
+  a **x 101**; lo sprite è largo 8 e la x è il **centro** (riposo 7).
+- **Disposizione**: singola a **sinistra** (`{17, 26}`, la slide toglie 10),
+  doppia a **destra** come SG (+66 dall'origine della box). La scaletta di 4 px
+  della seconda icona vale solo in doppia (in singola i 12 px non bastano).
+- L'arte (`graphics/types/battle_icons*.png`) è identica a SG ed è
+  **asimmetrica**. `ShouldFlipTypeIcon` specchia solo in doppia
+  (`UseDoubleBattleCoords`): la regola vera è "da che parte della healthbox sta
+  l'icona". In singola le direzioni di `GetTypeIconSlideMovement` /
+  `GetTypeIconHideMovement` sono speculari a SG, ed è corretto.
+- `tHorizontalPosition` (`data[4]`, `type_icons.h`): la slide si aggancia alla x
+  di riposo del **singolo sprite**, o l'indent di 4 px viene riassorbito.
+  `type_icons.c` differisce da SG solo per la tabella e `tHideIconTimer = 0`.
+- **Un diff vuoto fra due estratti vuoti non è una verifica**: l'`awk` con un nome
+  inesistente stampava nulla da entrambe le parti. Controlla che l'estratto non
+  sia vuoto.
