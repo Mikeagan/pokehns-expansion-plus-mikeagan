@@ -223,6 +223,12 @@ static const u8 *const sChoices_OnOff[] = {
     COMPOUND_STRING("OFF"),
 };
 
+static const u8 *const sChoices_Wild[] = {
+    COMPOUND_STRING("ON"),
+	COMPOUND_STRING("VISIBLE"),
+    COMPOUND_STRING("OFF"),
+};
+
 static const u8 *const sChoices_ShiftSet[] = {
     COMPOUND_STRING("SHIFT"),
     COMPOUND_STRING("SET"),
@@ -349,6 +355,7 @@ static const u8 *const sDesc_Nicknames[] = {
 };
 static const u8 *const sDesc_NoEncounters[] = {
     COMPOUND_STRING("Wild {PKMN} appear as usual."),
+	COMPOUND_STRING("Wild {PKMN} appear visible."),
     COMPOUND_STRING("No wild {PKMN} at all: grass, caves,\nfishing, Rock Smash and Sweet Scent."),
 };
 // Indexed by choice, and the choices are ON then OFF, so the ON text comes
@@ -600,11 +607,13 @@ static const struct OptionMenuItem sTabItems_Main[] = {
     [ITEM_MAIN_NO_ENCOUNTERS] = {
         .name         = COMPOUND_STRING("WILD BATTLES"),
         .descriptions = sDesc_NoEncounters,
-        .numChoices   = 2,
-        // ON first, because the stored bit is noWildEncounters: zero is what an
-        // older save reads back and has to mean "wild battles happen", so the
-        // label for zero is the one that must come first.
-        .choiceNames  = sChoices_OnOff,
+        .numChoices   = 3,
+		// 0 = encounters happen, which is what an older save reads.
+		// 1 = encounters happen, but VISUAL
+		// 2 = a repel that never runs out.
+        // zero is what an older save reads back and has to mean "wild battles happen",
+        // so the label for zero is the one that must come first.
+        .choiceNames  = sChoices_Wild,
     },
     [ITEM_MAIN_ENHANCED_DEXNAV] = {
         .name         = COMPOUND_STRING("ENHANCED DEXNAV"),

@@ -350,17 +350,18 @@ struct ChallengeSettings
     u8 guaranteedCatch:1; // 1 = every Ball catches, see ComputeCaptureOdds
     u8 skipNicknamePrompt:1; // 1 = never ask for a nickname. Inverted on purpose,
                              // so a save written before this option keeps asking.
-    u8 noWildEncounters:1;   // 1 = a repel that never runs out. Zero means
-                             // encounters happen, which is what an older save reads.
+    u8 noWildEncounters:2;   // 0 = encounters happen, which is what an older save reads.
+							 // 1 = encounters happen, but VISUAL
+							 // 2 = a repel that never runs out.
     u8 basicDexNav:1;        // ENHANCED DEXNAV, stored inverted. The default is
                              // ON, and an older save reads zero, so zero has to
                              // be the ON side: 1 means "fall back to the plain
                              // DexNav HnS shipped". Ugly name, right polarity -
                              // see the bit polarity rule in CLAUDE.md.
-    u8 unusedTrainerCatchBit:1; // was trainerCatch, the TRAINER CATCH option,
-                                // replaced by the TcloneR key item. Cleared by the
-                                // SAVE_VERSION 9 migration, so it is free again:
-                                // the only spare bit.
+    //u8 noVisualEncounters:1; // now used to determine if pokemon are visual 
+											// added to noWildEncounters
+                                // was trainerCatch, the TRAINER CATCH option, replaced by the TcloneR key item. Cleared by the
+                                // SAVE_VERSION 9 migration, so it is free again: the only spare bit.
 };
 
 // Quest book (src/quest_log.c). Every bit reads 0 as its default: not a

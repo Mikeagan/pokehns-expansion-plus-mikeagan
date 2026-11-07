@@ -1048,7 +1048,8 @@ u8 LoadGameSave(u8 saveType)
         // merged into ENHANCED DEXNAV, so a save that had that option on would
         // wake up able to catch Trainers' Pokemon. Start every existing save
         // with it off; it is one toggle away in the PC's challenge menu.
-        gSaveBlock3Ptr->challengeSettings.unusedTrainerCatchBit = FALSE;
+        //gSaveBlock3Ptr->challengeSettings.noVisualEncounters = FALSE; //unusedTrainerCatchBit
+		
         // FLAG_FORCE_SHINY is the old FLAG_UNUSED_3. Upstream's history is a
         // single squashed commit, so there is no proving an older HnS never
         // wrote it; if it did, every wild Pokemon would come out shiny.
@@ -1072,7 +1073,7 @@ u8 LoadGameSave(u8 saveType)
         // ignored now; clearing it is what makes it free for another option.
         // Whoever had it on gets the item from the scientist like everyone
         // else: the clone count starts with the item.
-        gSaveBlock3Ptr->challengeSettings.unusedTrainerCatchBit = FALSE;
+        //gSaveBlock3Ptr->challengeSettings.noVisualEncounters = FALSE; //unusedTrainerCatchBit
         // The per-Trainer flags took over Emerald's old dex flag filler, which
         // no build wrote but which is not provably zero in every save.
         memset(gSaveBlock2Ptr->pokedex.tclonerTrainerFlags, 0, sizeof(gSaveBlock2Ptr->pokedex.tclonerTrainerFlags));

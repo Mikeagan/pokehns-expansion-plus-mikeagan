@@ -90,7 +90,16 @@ void DisableWildEncounters(bool8 disabled)
 // above is the scripted, EWRAM-only switch and is untouched by this.
 bool32 AreWildEncountersDisabledByOption(void)
 {
-    return gSaveblock3.challengeSettings.noWildEncounters;
+	if (gSaveblock3.challengeSettings.noWildEncounters == 2)
+			return TRUE;
+    return FALSE;
+}
+//Determine if Wild Pokemon are Visual roaming
+bool32 AreWildEncountersVisibleByOption(void)
+{
+    if (gSaveblock3.challengeSettings.noWildEncounters == 1)
+			return TRUE;
+    return FALSE;
 }
 
 // Each fishing spot on Route 119 is given a number between 1 and NUM_FISHING_SPOTS inclusive.

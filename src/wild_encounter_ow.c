@@ -297,9 +297,12 @@ static u32 GetOWESpawnCap(void)
 // soundAndFieldOptions.noOverworldMons, now unusedOverworldMonsBit). WILD
 // BATTLES OFF (challenge settings) turns both off, or the visible Pokémon
 // would still start battles.
+
 bool32 AreOverworldMonsEnabled(void)
 {
     if (!WE_OW_ENCOUNTERS || AreWildEncountersDisabledByOption())
+        return FALSE;
+	if (!AreWildEncountersVisibleByOption())	//turn on/off visual encounters
         return FALSE;
     // Bug-Catching Contest: the user chose to keep the classic step
     // encounters there; the gate attendant warns about it (Gate_NationalPark).
