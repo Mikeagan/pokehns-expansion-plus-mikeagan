@@ -9645,6 +9645,9 @@ void UpdateMonPersonality(struct BoxPokemon *boxMon, u32 personality)
 void HealPokemon(struct Pokemon *mon)
 {
     u32 data;
+    u8 pokerusValue = 0x11; // 0x11 is a fresh, active strain of Pokérus
+    u16 heldItem;
+    bool8 rollSuccess = FALSE;
 
     data = GetMonData(mon, MON_DATA_MAX_HP);
     SetMonData(mon, MON_DATA_HP, &data);
@@ -9653,6 +9656,25 @@ void HealPokemon(struct Pokemon *mon)
     SetMonData(mon, MON_DATA_STATUS, &data);
 
     MonRestorePP(mon);
+
+    heldItem = GetMonData(mon, MON_DATA_HELD_ITEM);
+
+    if (heldItem == ITEM_NUGGET)
+    {
+        if ((Random() % 100) < 20)
+            rollSuccess = TRUE;
+    }
+    else if (heldItem == ITEM_BIG_NUGGET)
+    {
+        if ((Random() % 100) < 50)
+            rollSuccess = TRUE;
+    }
+
+    // If the item rolled successfully, attempt to infect
+    if (rollSuccess && GetMonData(mon, MON_DATA_POKERUS) == 0)
+    {
+        SetMonData(mon, MON_DATA_POKERUS, &pokerusValue);
+    }
 }
 
 void HealBoxPokemon(struct BoxPokemon *boxMon)
